@@ -5,27 +5,27 @@ class Game():
     Main game class holding major functions and variables
     """
 
-    def loadimage(self, image: str):
-        img = pg.image.load(image)
-        return img
-
     def __init__(self):
         self.framerate: int = None
         self.name: str = None
         self.dimensions: tuple = None
-        self.icon: pg.Surface = None
+        # self.icon: pg.Surface = None
         self._running = False
         self._clock = pg.time.Clock()
+
+    def loadimage(self, image: str):
+        img = pg.image.load(image)
+        return img
 
     def rungame(self):
         """
         Function to run game
         """
-        if self._running is not True and self.framerate and self.name and self.dimensions and self.icon is not None:
+        if self._running is not True and self.framerate and self.name and self.dimensions:
             pg.init()
             pg.display.set_mode(self.dimensions)
             pg.display.set_caption(self.name)
-            pg.display.set_icon(self.icon)
+            # pg.display.set_icon(self.icon)
             self._running = True
             self._mainloop()
 
@@ -66,11 +66,11 @@ class Game():
 def main():
     game = Game()
     game.dimensions = (1200, 700)
-    game.name = "PaticeSmash"
+    game.name = "PatriceSmash"
     game.framerate = 60
 
-    img = game.loadimage("img.jpg")
-    game.icon = img
+    #img = game.loadimage("./assets/art/icon.jpg")
+    #game.icon = img
 
     game.rungame()
 
