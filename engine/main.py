@@ -13,6 +13,9 @@ class Game():
         self._running = False
         self._clock = pg.time.Clock()
 
+        self._WHITE = (255, 255, 255)
+        self._BLACK = (0, 0, 0)
+
     def loadimage(self, image: str):
         img = pg.image.load(image)
         return img
@@ -23,7 +26,7 @@ class Game():
         """
         if self._running is not True and self.framerate and self.name and self.dimensions:
             pg.init()
-            pg.display.set_mode(self.dimensions)
+            self._window = pg.display.set_mode(self.dimensions, pg.FULLSCREEN)
             pg.display.set_caption(self.name)
             # pg.display.set_icon(self.icon)
             self._running = True
@@ -61,17 +64,24 @@ class Game():
                 if event.type == pg.QUIT:
                     self._running = False
             pg.display.update()
-            self._clock.tick(self.framerate)
+            self._drawwindow()
+
+        self._clock.tick(self.framerate)
+    def _drawwindow(self):
+        self._window.fill(self._WHITE)
+        pg.display.update()
+
+
+
+game = Game()
+game.dimensions = (1920,1080)
+game.name = "PatriceSmash"
+game.framerate = 60
+
+#img = game.loadimage("./assets/art/icon.jpg")
+#game.icon = img
 
 def main():
-    game = Game()
-    game.dimensions = (1200, 700)
-    game.name = "PatriceSmash"
-    game.framerate = 60
-
-    #img = game.loadimage("./assets/art/icon.jpg")
-    #game.icon = img
-
     game.rungame()
 
 if __name__=="__main__":
