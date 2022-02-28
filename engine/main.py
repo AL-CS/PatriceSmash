@@ -17,6 +17,9 @@ class Game():
         self._BLACK = (0, 0, 0)
 
     def loadimage(self, image: str):
+        """
+        Function to return an image by filename passed a string in the pygame Surface format
+        """
         img = pg.image.load(image)
         return img
 
@@ -53,25 +56,53 @@ class Game():
         elif var.lower() == "game":
             return self
 
+    def getfont(self, fontname: str, size: int):
+        status = pg.font.get_init()
+
+        if (status is False):
+            pg.font.init()
+
+        font = pg.font.SysFont(fontname, size)
+        return font
+    
+    def renderfont(self, font, text: str, antialias: bool, color: tuple, backgroundcolor: tuple = None):
+        """
+        Renders font object as an image
+        """
+        if (backgroundcolor is not None):
+            text = font.render(text, antialias, color, backgroundcolor)
+
+        elif (backgroundcolor is None):
+            text = font.render(text, antialias, color)
+
+        return text
+
+    def displaytext(self, text, position: tuple = (0, 0)):
+        self._window.blit(text, position)
+
     def _mainloop(self):
         """
         Starts game main loop
 
         Inits display
         """
+        verdana = self.getfont('Verdana.ttf', 72)
+        text = self.renderfont(verdana, 'test', True, self._WHITE, self._BLACK)
         while self._running:
+            
+            self.displaytext(text, (0,0))
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self._running = False
             pg.display.update()
             self._drawwindow()
 
+            self._clock.tick(self.framerate)
+
         self._clock.tick(self.framerate)
     def _drawwindow(self):
-        self._window.fill(self._WHITE)
+        self._window.fill(self._BLACK)
         pg.display.update()
-
-
 
 game = Game()
 game.dimensions = (1920,1080)
