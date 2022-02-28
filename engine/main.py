@@ -1,3 +1,4 @@
+import csv
 import pygame as pg
 
 class Game():
@@ -16,6 +17,13 @@ class Game():
         self._WHITE = (255, 255, 255)
         self._BLACK = (0, 0, 0)
 
+    def loadcsv(self, location):
+        final = []
+        with open(location, 'r') as data:
+            for line in csv.DictReader(data):
+                final.append(line)
+        return final
+
     def loadimage(self, image: str):
         """
         Function to return an image by filename passed a string in the pygame Surface format
@@ -27,6 +35,12 @@ class Game():
         """
         Function to run game
         """
+
+        maps = self.loadcsv('../assets/resources/maps.csv')
+        characters = self.loadcsv('../assets/resources/characters.csv')
+        
+        print(maps)
+        print(characters)
         if self._running is not True and self.framerate and self.name and self.dimensions:
             pg.init()
             self._window = pg.display.set_mode(self.dimensions, pg.FULLSCREEN)
@@ -90,7 +104,7 @@ class Game():
         text = self.renderfont(verdana, 'test', True, self._WHITE, self._BLACK)
         while self._running:
             
-            self.displaytext(text, (0,0))
+            # self.displaytext(text, (0,0))
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self._running = False
@@ -108,6 +122,9 @@ game = Game()
 game.dimensions = (1920,1080)
 game.name = "PatriceSmash"
 game.framerate = 60
+
+def get_game():
+    return game
 
 #img = game.loadimage("./assets/art/icon.jpg")
 #game.icon = img
