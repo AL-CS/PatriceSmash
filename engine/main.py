@@ -1,5 +1,4 @@
 import csv
-from time import sleep
 import pygame as pg
 from pygame.rect import *
 
@@ -19,7 +18,7 @@ class Game():
     def __init__(self):
         
         
-        self.BACKGROUND = self.loadimage("../assets/art/background.png")
+        self.BACKGROUND = self.loadimage("../assets/art/background2.png")
         self.framerate: int = None
         self.name: str = None
         self.dimensions: tuple = None
@@ -172,9 +171,8 @@ class Game():
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         if self._status == "main":
+                            exit()
 
-                            self._playrunning = False
-                            self._running = False
                     elif event.key == pg.K_DOWN:
                         if self._status == "main":
                             if self._selected == "play":
@@ -231,7 +229,7 @@ class Game():
             self.displaytext(optionsText, centerOptionsText)
             self.displaytext(creditsText, centerCreditsText)
 
-            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 2, 10, 10, 10, 10)
+            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 3, 10, 10, 10, 10)
 
             pg.display.update()
 
@@ -266,7 +264,6 @@ class Game():
         selectionOutline.center = centerBack.center
 
         while self._playrunning:
-            
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self._running = False
@@ -286,13 +283,11 @@ class Game():
                                 self._playrunning = False
                                 self._mainloop()
 
-
-
             self._window.blit(self.BACKGROUND, (0,0))
             self.displaytext(playPlaceholder, centerPlaceholder)
             self.displaytext(backText, centerBack)
 
-            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 2, 10, 10, 10, 10)
+            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 3, 10, 10, 10, 10)
 
             pg.display.update()
 
@@ -343,7 +338,7 @@ class Game():
             self.displaytext(playPlaceholder, centerPlaceholder)
             self.displaytext(backText, centerBack)
 
-            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 2, 10, 10, 10, 10)
+            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 3, 10, 10, 10, 10)
 
             pg.display.update()
 
@@ -394,7 +389,7 @@ class Game():
             self.displaytext(playPlaceholder, centerPlaceholder)
             self.displaytext(backText, centerBack)
 
-            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 2, 10, 10, 10, 10)
+            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 3, 10, 10, 10, 10)
 
             pg.display.update()
 
