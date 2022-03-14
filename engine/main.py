@@ -423,9 +423,6 @@ class Character(pg.sprite.Sprite):
     def printgame(self):
         print(self.game.dimensions)
 
-
-        
-
 def get_game():
     """
     Returns control loop game object
