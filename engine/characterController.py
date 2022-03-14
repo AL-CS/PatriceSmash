@@ -16,4 +16,8 @@ class Character(pg.sprite.Sprite):
         self.alive: bool = True
         self.lives: int = None
 
-patrice = Character("Patrice", 100, 3, )
+    def printgame(self):
+        print(self.game.dimensions)
+
+patrice = Character("Patrice", 100, 3)
+patrice.printgame()
