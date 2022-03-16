@@ -16,9 +16,12 @@ class Game():
     _creditsrunning = False
 
     def __init__(self):
-        
-        
-        self.BACKGROUND = self.loadimage("../assets/art/background2.png")
+
+        pg.mixer.init()  
+        self._clickSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/select.wav")
+        self.swishSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/swish.wav")
+
+        self.BACKGROUND = self.loadimage("../assets/art/backgrounds/background.png")
         self.framerate: int = None
         self.name: str = None
         self.dimensions: tuple = None
@@ -28,12 +31,18 @@ class Game():
 
         self._status = "main"
         self._selected = "play"
+        self._previously_selected = "play"
 
         self._WHITE = (255, 255, 255)
         self._RED = (255, 0, 0)
         self._GREEN = (0, 225, 0)
         self._BLUE = (0, 0, 225)
         self._BLACK = (0, 0, 0)
+
+    def draw_rect_alpha(self, surface, color, rect):
+        shape_surf = pg.Surface(pg.Rect(rect).size, pg.SRCALPHA)
+        pg.draw.rect(shape_surf, color, shape_surf.get_rect())
+        surface.blit(shape_surf, rect)
 
     def loadimage(self, image: str):
         """
@@ -143,16 +152,17 @@ class Game():
         pg.mouse.set_visible(False)
         x, y = self.dimensions
 
+        funkmaster = self.getfont("../assets/resources/fonts/SFFunkMaster-Oblique.ttf", 120)
         arcade_90 = self.getfont("../assets/resources/fonts/arcade.ttf", 90)
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
 
 
-        mainmenu = self.renderfont(arcade_90, "Patrice Smash", True, (255, 255, 255))
+        mainmenu = self.renderfont(funkmaster, "Patrice Smash", True, (255, 255, 255))
         playText = self.renderfont(arcade_72, "Play", True, (255, 255, 255))
         optionsText = self.renderfont(arcade_72, "Options", True, (255, 255, 255))
         creditsText = self.renderfont(arcade_72, "Credits", True, (255, 255, 255))
 
-        centerMainText = mainmenu.get_rect(center=((x/2), (y/4)))
+        centerMainText = mainmenu.get_rect(center=((x/2), (y/4.25)))
         centerPlayText = playText.get_rect(center=((x/2), (y/2.5)))
         centerOptionsText = optionsText.get_rect(center=((x/2), (y/1.75)))
         centerCreditsText = creditsText.get_rect(center=((x/2), (y/1.35)))
@@ -174,6 +184,7 @@ class Game():
                             exit()
 
                     elif event.key == pg.K_DOWN:
+                        self.swishSoundEffect.play()
                         if self._status == "main":
                             if self._selected == "play":
                                 selectionOutline = centerOptionsText.inflate(30, 30)
@@ -185,6 +196,7 @@ class Game():
                                 selectionOutline = centerPlayText.inflate(30, 30)
                                 self._selected = "play"
                     elif event.key == pg.K_UP:
+                        self.swishSoundEffect.play()
                         if self._status == "main":
                             if self._selected == "play":
                                 selectionOutline = centerCreditsText.inflate(30, 30)
@@ -196,6 +208,7 @@ class Game():
                                 selectionOutline = centerOptionsText.inflate(30, 30)
                                 self._selected = "options"
                     elif event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
+                        self._clickSoundEffect.play()
                         if self._status == "main":
                             if self._selected == "play":
 
@@ -223,7 +236,10 @@ class Game():
 
                                 self._running = False
 
+
             self._window.blit(self.BACKGROUND, (0,0))
+
+
             self.displaytext(mainmenu, centerMainText)
             self.displaytext(playText, centerPlayText)
             self.displaytext(optionsText, centerOptionsText)
@@ -276,6 +292,7 @@ class Game():
                             self._mainloop()
 
                     if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
+                        self._clickSoundEffect.play()
                         if self._status == "play":
                             if self._selected == "back":
                                 self._status = "main"
@@ -300,7 +317,7 @@ class Game():
 
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
 
-        playPlaceholder = self.renderfont(arcade_72, "Insert info here", True, (255, 255, 255))
+        playPlaceholder = self.renderfont(arcade_72, "Options", True, (255, 255, 255))
         backText = self.renderfont(arcade_72, "Back", True, (255, 255, 255))
 
         centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/4)))
@@ -319,6 +336,7 @@ class Game():
                     self._running = False
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
+                        self._clickSoundEffect.play()
                         if self._status == "options":
                             self._status = "main"
                             
@@ -326,6 +344,7 @@ class Game():
                             self._mainloop()
 
                     if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
+                        self._clickSoundEffect.play()
                         if self._status == "options":
                             if self._selected == "back":
                                 self._status = "main"
@@ -349,13 +368,29 @@ class Game():
         pg.mouse.set_visible(False)
         x, y = self.dimensions
 
+        arcade_90 = self.getfont("../assets/resources/fonts/arcade.ttf", 90)
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
+        arcade_60 = self.getfont("../assets/resources/fonts/arcade.ttf", 45)
+        shocap = self.getfont("../assets/resources/fonts/Sho-CardCapsNF.ttf", 72)
+        funkmaster = self.getfont("../assets/resources/fonts/SFFunkMaster-Oblique.ttf", 90)
 
-        playPlaceholder = self.renderfont(arcade_72, "Insert info here", True, (255, 255, 255))
+        playPlaceholder = self.renderfont(funkmaster, "Game Credits", True, (255, 255, 255))
         backText = self.renderfont(arcade_72, "Back", True, (255, 255, 255))
 
-        centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/4)))
-        centerBack = backText.get_rect(center=((x/2), (y/2.5)))
+        projectManager = self.renderfont(arcade_60, "Project Manager: Howie Turner", True, (255,255,255))
+        businessAnalyst = self.renderfont(arcade_60, "Business Analyst: Sean Pettenger", True, (255,255,255))
+        graphicalArtist = self.renderfont(arcade_60, "Graphical Artist: Joshua Walker", True, (255,255,255))
+        developer = self.renderfont(arcade_60, "Work-Doer: Aidan Lelliott", True, (255,255,255))
+        
+        centerProjectManager = projectManager.get_rect(center=((x/2), (y/2.75)))
+        centerBusinessAnalyst = businessAnalyst.get_rect(center=((x/2), (y/2.15)))
+        centerGraphicalArtist = graphicalArtist.get_rect(center=((x/2), (y/1.75)))
+        centerDeveloper = developer.get_rect(center=((x/2), (y/1.5)))
+
+        centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/5)))
+        horizontalRect = centerPlaceholder.inflate(1000, 10)
+
+        centerBack = backText.get_rect(center=((x/2), (y/1.25)))
 
         selectionOutline = centerBack.inflate(30,30)
 
@@ -369,6 +404,7 @@ class Game():
                 if event.type == pg.QUIT:
                     self._running = False
                 elif event.type == pg.KEYDOWN:
+                    self._clickSoundEffect.play()
                     if event.key == pg.K_ESCAPE:
                         if self._status == "credits":
                             self._status = "main"
@@ -377,6 +413,7 @@ class Game():
                             self._mainloop()
 
                     if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
+                        self._clickSoundEffect.play()
                         if self._status == "credits":
                             if self._selected == "back":
                                 self._status = "main"
@@ -386,10 +423,16 @@ class Game():
 
 
             self._window.blit(self.BACKGROUND, (0,0))
-            self.displaytext(playPlaceholder, centerPlaceholder)
             self.displaytext(backText, centerBack)
+            self.displaytext(projectManager, centerProjectManager)
+            self.displaytext(businessAnalyst, centerBusinessAnalyst)
+            self.displaytext(graphicalArtist, centerGraphicalArtist)
+            self.displaytext(developer, centerDeveloper)
 
             pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 3, 10, 10, 10, 10)
+            self.draw_rect_alpha(self._window, (225, 225, 225, 50), horizontalRect)
+
+            self.displaytext(playPlaceholder, centerPlaceholder)
 
             pg.display.update()
 
@@ -414,9 +457,6 @@ class Character(pg.sprite.Sprite):
         self.name: str = None
         self.alive: bool = True
         self.lives: int = None
-
-    def printgame(self):
-        print(self.game.dimensions)
 
 def get_game():
     """
