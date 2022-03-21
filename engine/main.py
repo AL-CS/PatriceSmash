@@ -1,5 +1,6 @@
 import csv
 import pygame as pg
+import json
 from pygame.rect import *
 
 import pygame_widgets as pgw
@@ -18,9 +19,12 @@ class Game():
     def __init__(self):
 
         pg.mixer.init()  
+        with open('../assets/resources/userSettings.json', 'r') as f:
+            self.dictData = json.loads(f.read())
+        
         self._clickSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/select.wav")
         self.swishSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/swish.wav")
-        self._SOUNDENABLED = True
+        self._SOUNDENABLED = self.dictData["audio"]
 
         self.BACKGROUND = self.loadimage("../assets/art/backgrounds/background.png")
         self.framerate: int = None
@@ -39,6 +43,12 @@ class Game():
         self._GREEN = (0, 225, 0)
         self._BLUE = (0, 0, 225)
         self._BLACK = (0, 0, 0)
+
+    def updateAudioListAndWriteToJSON(self, boolVal: bool):
+        self._SOUNDENABLED = boolVal
+        with open('../assets/resources/userSettings.json', "+") as f:
+            compiled = json.dumps(self.dictData)
+            f.write(compiled)
 
     def playIfActive(self, sound: pg.mixer.Sound):
         if self._SOUNDENABLED is True: sound.play()
@@ -324,7 +334,7 @@ class Game():
         funkmaster = self.getfont("../assets/resources/fonts/SFFunkMaster-Oblique.ttf", 90)
 
         playPlaceholder = self.renderfont(funkmaster, "Game Options", True, (255, 255, 255))
-        soundToggle = self.renderfont(arcade_60, "Audio Enabled: True", True, (255, 255, 255))
+        soundToggle = self.renderfont(arcade_60, f"Audio Enabled:{self._SOUNDENABLED}", True, (255, 255, 255))
         backText = self.renderfont(arcade_72, "Back", True, (255, 255, 255))
 
         centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/5)))
@@ -382,16 +392,16 @@ class Game():
                             if self._selected == "toggleAudio":
                                 CURRENT_TOGGLE_STATUS = self._SOUNDENABLED
                                 if CURRENT_TOGGLE_STATUS == True:
-                                    soundToggle = self.renderfont(arcade_60, "Audio Enabled: False", True, (255, 255, 255))
+                                    self.updateAudioListAndWriteToJSON(False)
+                                    soundToggle = self.renderfont(arcade_60, f"Audio Enabled:{self._SOUNDENABLED}", True, (255, 255, 255))
                                     centerAudioToggle = soundToggle.get_rect(center=((x/2), (y/1.75)))
                                     selectionOutline = centerAudioToggle.inflate(30,30)
-                                    self._SOUNDENABLED = False
 
                                 elif CURRENT_TOGGLE_STATUS == False:
-                                    soundToggle = self.renderfont(arcade_60, "Audio Enabled: True", True, (255, 255, 255))
+                                    self.updateAudioListAndWriteToJSON(True)
+                                    soundToggle = self.renderfont(arcade_60, f"Audio Enabled:{self._SOUNDENABLED}", True, (255, 255, 255))
                                     centerAudioToggle = soundToggle.get_rect(center=((x/2), (y/1.75)))
                                     selectionOutline = centerAudioToggle.inflate(30,30)
-                                    self._SOUNDENABLED = True
 
                             if self._selected == "back":
                                 self._status = "main"
