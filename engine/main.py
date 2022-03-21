@@ -20,6 +20,7 @@ class Game():
         pg.mixer.init()  
         self._clickSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/select.wav")
         self.swishSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/swish.wav")
+        self._SOUNDENABLED = True
 
         self.BACKGROUND = self.loadimage("../assets/art/backgrounds/background.png")
         self.framerate: int = None
@@ -39,6 +40,9 @@ class Game():
         self._BLUE = (0, 0, 225)
         self._BLACK = (0, 0, 0)
 
+    def playIfActive(self, sound: pg.mixer.Sound):
+        if self._SOUNDENABLED is True: sound.play()
+        
     def draw_rect_alpha(self, surface, color, rect):
         shape_surf = pg.Surface(pg.Rect(rect).size, pg.SRCALPHA)
         pg.draw.rect(shape_surf, color, shape_surf.get_rect())
@@ -96,7 +100,7 @@ class Game():
 
 
     def get(self, var: str):
-        """
+        """m                                                                                                                m            
         Gets and returns private vars
         """
         if var.lower() == "framerate":
@@ -184,7 +188,7 @@ class Game():
                             exit()
 
                     elif event.key == pg.K_DOWN:
-                        self.swishSoundEffect.play()
+                        self.playIfActive(self.swishSoundEffect)
                         if self._status == "main":
                             if self._selected == "play":
                                 selectionOutline = centerOptionsText.inflate(30, 30)
@@ -196,7 +200,7 @@ class Game():
                                 selectionOutline = centerPlayText.inflate(30, 30)
                                 self._selected = "play"
                     elif event.key == pg.K_UP:
-                        self.swishSoundEffect.play()
+                        self.playIfActive(self.swishSoundEffect)
                         if self._status == "main":
                             if self._selected == "play":
                                 selectionOutline = centerCreditsText.inflate(30, 30)
@@ -208,7 +212,7 @@ class Game():
                                 selectionOutline = centerOptionsText.inflate(30, 30)
                                 self._selected = "options"
                     elif event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
-                        self._clickSoundEffect.play()
+                        self.playIfActive(self._clickSoundEffect)
                         if self._status == "main":
                             if self._selected == "play":
 
@@ -245,7 +249,7 @@ class Game():
             self.displaytext(optionsText, centerOptionsText)
             self.displaytext(creditsText, centerCreditsText)
 
-            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 3, 10, 10, 10, 10)
+            pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
 
             pg.display.update()
 
@@ -292,7 +296,7 @@ class Game():
                             self._mainloop()
 
                     if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
-                        self._clickSoundEffect.play()
+                        self.playIfActive(self._clickSoundEffect)
                         if self._status == "play":
                             if self._selected == "back":
                                 self._status = "main"
@@ -304,30 +308,37 @@ class Game():
             self.displaytext(playPlaceholder, centerPlaceholder)
             self.displaytext(backText, centerBack)
 
-            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 3, 10, 10, 10, 10)
+            pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
 
             pg.display.update()
 
             self._clock.tick(self.framerate)
     
     def _optionsloop(self):
-        self._selected = "back"
+        self._selected = "toggleAudio"
         pg.mouse.set_visible(False)
         x, y = self.dimensions
 
+        arcade_60 = self.getfont("../assets/resources/fonts/arcade.ttf", 60)
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
+        funkmaster = self.getfont("../assets/resources/fonts/SFFunkMaster-Oblique.ttf", 90)
 
-        playPlaceholder = self.renderfont(arcade_72, "Options", True, (255, 255, 255))
+        playPlaceholder = self.renderfont(funkmaster, "Game Options", True, (255, 255, 255))
+        soundToggle = self.renderfont(arcade_60, "Audio Enabled: True", True, (255, 255, 255))
         backText = self.renderfont(arcade_72, "Back", True, (255, 255, 255))
 
-        centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/4)))
-        centerBack = backText.get_rect(center=((x/2), (y/2.5)))
+        centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/5)))
+        horizontalRect = centerPlaceholder.inflate(1000, 10)
 
-        selectionOutline = centerBack.inflate(30,30)
+        centerAudioToggle = soundToggle.get_rect(center=((x/2), (y/1.75)))
+        centerBack = backText.get_rect(center=((x/2), (y/1.25)))
 
+        selectionOutline = centerAudioToggle.inflate(30,30)
+
+        centerAudioToggle.inflate(30, 30)
         centerPlaceholder.inflate(30,30)
         centerBack.inflate(30, 30)
-        selectionOutline.center = centerBack.center
+        selectionOutline.center = centerAudioToggle.center
 
         while self._optionsrunning:
             
@@ -336,16 +347,52 @@ class Game():
                     self._running = False
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
-                        self._clickSoundEffect.play()
+                        self.playIfActive(self._clickSoundEffect)
                         if self._status == "options":
                             self._status = "main"
                             
                             self._optionsrunning = False
                             self._mainloop()
 
-                    if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
-                        self._clickSoundEffect.play()
+                    if event.key == pg.K_UP:
+                        self.playIfActive(self.swishSoundEffect)
                         if self._status == "options":
+                            if self._selected == "back":
+                                selectionOutline = centerAudioToggle.inflate(30, 30)
+                                self._selected = "toggleAudio"
+
+                            elif self._selected == "toggleAudio":
+                                selectionOutline = centerBack.inflate(30, 30)
+                                self._selected = "back"
+                    
+                    if event.key == pg.K_DOWN:
+                        self.playIfActive(self.swishSoundEffect)
+                        if self._status == "options":
+                            if self._selected == "back":
+                                selectionOutline = centerAudioToggle.inflate(30, 30)
+                                self._selected = "toggleAudio"
+
+                            elif self._selected == "toggleAudio":
+                                selectionOutline = centerBack.inflate(30, 30)
+                                self._selected = "back"
+
+                    if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
+                        self.playIfActive(self._clickSoundEffect)
+                        if self._status == "options":
+                            if self._selected == "toggleAudio":
+                                CURRENT_TOGGLE_STATUS = self._SOUNDENABLED
+                                if CURRENT_TOGGLE_STATUS == True:
+                                    soundToggle = self.renderfont(arcade_60, "Audio Enabled: False", True, (255, 255, 255))
+                                    centerAudioToggle = soundToggle.get_rect(center=((x/2), (y/1.75)))
+                                    selectionOutline = centerAudioToggle.inflate(30,30)
+                                    self._SOUNDENABLED = False
+
+                                elif CURRENT_TOGGLE_STATUS == False:
+                                    soundToggle = self.renderfont(arcade_60, "Audio Enabled: True", True, (255, 255, 255))
+                                    centerAudioToggle = soundToggle.get_rect(center=((x/2), (y/1.75)))
+                                    selectionOutline = centerAudioToggle.inflate(30,30)
+                                    self._SOUNDENABLED = True
+
                             if self._selected == "back":
                                 self._status = "main"
                             
@@ -355,9 +402,11 @@ class Game():
 
             self._window.blit(self.BACKGROUND, (0,0))
             self.displaytext(playPlaceholder, centerPlaceholder)
+            self.displaytext(soundToggle, centerAudioToggle)
             self.displaytext(backText, centerBack)
 
-            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 3, 10, 10, 10, 10)
+            pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
+            self.draw_rect_alpha(self._window, (225, 225, 225, 50), horizontalRect)
 
             pg.display.update()
 
@@ -380,7 +429,7 @@ class Game():
         projectManager = self.renderfont(arcade_60, "Project Manager: Howie Turner", True, (255,255,255))
         businessAnalyst = self.renderfont(arcade_60, "Business Analyst: Sean Pettenger", True, (255,255,255))
         graphicalArtist = self.renderfont(arcade_60, "Graphical Artist: Joshua Walker", True, (255,255,255))
-        developer = self.renderfont(arcade_60, "Work-Doer: Aidan Lelliott", True, (255,255,255))
+        developer = self.renderfont(arcade_60, "Developer: Aidan Lelliott", True, (255,255,255))
         
         centerProjectManager = projectManager.get_rect(center=((x/2), (y/2.75)))
         centerBusinessAnalyst = businessAnalyst.get_rect(center=((x/2), (y/2.15)))
@@ -404,7 +453,7 @@ class Game():
                 if event.type == pg.QUIT:
                     self._running = False
                 elif event.type == pg.KEYDOWN:
-                    self._clickSoundEffect.play()
+                    self.playIfActive(self._clickSoundEffect)
                     if event.key == pg.K_ESCAPE:
                         if self._status == "credits":
                             self._status = "main"
@@ -413,7 +462,7 @@ class Game():
                             self._mainloop()
 
                     if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
-                        self._clickSoundEffect.play()
+                        self.playIfActive(self._clickSoundEffect)
                         if self._status == "credits":
                             if self._selected == "back":
                                 self._status = "main"
@@ -429,7 +478,7 @@ class Game():
             self.displaytext(graphicalArtist, centerGraphicalArtist)
             self.displaytext(developer, centerDeveloper)
 
-            pg.draw.rect(self._window, (100, 100, 100), selectionOutline, 3, 10, 10, 10, 10)
+            pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
             self.draw_rect_alpha(self._window, (225, 225, 225, 50), horizontalRect)
 
             self.displaytext(playPlaceholder, centerPlaceholder)
