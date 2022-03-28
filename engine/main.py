@@ -1,10 +1,7 @@
 import csv
 import pygame as pg
 import json
-from pygame.rect import *
-
-import pygame_widgets as pgw
-from pygame_widgets.button import Button
+from pygame.rect import *  
 
 class Game():
     
@@ -15,6 +12,11 @@ class Game():
     _playrunning = False
     _optionsrunning = False
     _creditsrunning = False
+
+    _characterList = {
+        "alive": [],
+        "dead": []
+    }
 
     def __init__(self):
 
@@ -27,10 +29,11 @@ class Game():
         self._SOUNDENABLED = self.dictData["audio"]
 
         self.BACKGROUND = self.loadimage("../assets/art/backgrounds/background.png")
+        self.PLAYSCREEN = self.loadimage("../assets/art/backgrounds/playscreen.png")
         self.framerate: int = None
         self.name: str = None
         self.dimensions: tuple = None
-        # self.icon: pg.Surface = None
+        self.icon: pg.Surface = None
 
         self._clock = pg.time.Clock()
 
@@ -38,15 +41,16 @@ class Game():
         self._selected = "play"
         self._previously_selected = "play"
 
-        self._WHITE = (255, 255, 255)
-        self._RED = (255, 0, 0)
-        self._GREEN = (0, 225, 0)
-        self._BLUE = (0, 0, 225)
-        self._BLACK = (0, 0, 0)
+    class Colors():
+        BLACK = (0, 0, 0)
+        WHITE = (255, 255, 255)
+        RED = (255, 0, 0)
+        GREEN = (0, 225, 0)
+        BLUE = (0, 0, 225)
 
     def updateAudioListAndWriteToJSON(self, boolVal: bool):
         self._SOUNDENABLED = boolVal
-        with open('../assets/resources/userSettings.json', "+") as f:
+        with open('../assets/resources/userSettings.json', "w") as f:
             compiled = json.dumps(self.dictData)
             f.write(compiled)
 
@@ -100,14 +104,13 @@ class Game():
             pg.init()
             self._window = pg.display.set_mode(self.dimensions)
             pg.display.set_caption(self.name)
-            # pg.display.set_icon(self.icon)
+            pg.display.set_icon(self.icon)
             self._running = True
             self._mainloop()
 
             print("Game loop started.")
         else:
             print("You have not initialized the game correctly, or the game is already running!")
-
 
     def get(self, var: str):
         """m                                                                                                                m            
@@ -265,6 +268,9 @@ class Game():
 
             self._clock.tick(self.framerate)
 
+    def _physicsEngineGameLoop(self):
+        pass
+
     def _selectloop(self):
         self._selected = "back"
         pg.mouse.set_visible(False)
@@ -294,6 +300,7 @@ class Game():
         selectionOutline.center = centerBack.center
 
         while self._playrunning:
+            events = pg.event.get()
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self._running = False
@@ -314,11 +321,11 @@ class Game():
                                 self._playrunning = False
                                 self._mainloop()
 
-            self._window.blit(self.BACKGROUND, (0,0))
-            self.displaytext(playPlaceholder, centerPlaceholder)
-            self.displaytext(backText, centerBack)
+            self._window.blit(self.PLAYSCREEN, (0,0))
+            #self.displaytext(playPlaceholder, centerPlaceholder)
+            #self.displaytext(backText, centerBack)
 
-            pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
+            #pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
 
             pg.display.update()
 
@@ -523,8 +530,8 @@ def get_game():
     """
     return game
 
-#img = game.loadimage("./assets/art/icon.jpg")
-#game.icon = img
+img = game.loadimage("../assets/art/icon.png")
+game.icon = img
 
 def main():
     game.run()
