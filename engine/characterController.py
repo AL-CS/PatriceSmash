@@ -1,6 +1,5 @@
-import random
 import itertools
-from numpy import datetime_as_string
+from numpy import random
 import pygame as pg
 import main as control
 
@@ -9,6 +8,11 @@ class Character(pg.sprite.Sprite):
     Represents a character builder
     """
     def __init__(self, name, lives):
+        print("init")
+        self.surf = pg.Surface((30,30))
+        self.surf.fill((control.get_game().Colors.RED))
+        self.rect = self.surf.get_rect(center=(10,420))
+
         self.idle: pg.Surface = None
         self.running: pg.Surface = None
         self.attack: pg.Surface = None 
@@ -18,18 +22,31 @@ class Character(pg.sprite.Sprite):
         self.name: str = name
         self.alive: bool = True
         self.lives: int = lives
+
+    class Platform(pg.sprite.Sprite):
+        game = control.get_game()
+        def __init__(self):  
+            self.surf = pg.Surface((self.game.dimensions[0], 20))
+            self.surf.fill(self.game.Colors)
     
     class damagetypes():
         HEAVY = "heavy"
         LIGHT = "light"
 
-    def damage(self, type: damagetypes, custom: float = None):
+        def chooseRandomType(self):
+            probs = [.75, .25]
+            types = [self.LIGHT, self.HEAVY]
+
+            randomType = random.choice(types, p=probs)
+            return randomType
+
+    def damage(self, type, custom: float = None):
 
         if self.alive is True:
             if custom is None:
-                if type is self.damagetypes.HEAVY:
+                if type == "heavy":
                     randomDamage = random.uniform(20.0, 30.0)
-                elif type is self.damagetypes.LIGHT:
+                elif type == "light":
                     randomDamage = random.uniform(5.0, 15.0)
             else:
                 randomDamage = custom
@@ -50,6 +67,8 @@ class Character(pg.sprite.Sprite):
 
                     print(f"{self.name} died!")
 
-patrice = Character("Patrice", 3)
+patrice = Character("Andrew", 3)
+damageTypes = patrice.damagetypes()
 for i in range(100):
-    patrice.damage(Character.damagetypes.HEAVY)
+    type = damageTypes.chooseRandomType()
+    patrice.damage(type)

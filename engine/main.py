@@ -41,6 +41,11 @@ class Game():
         self._selected = "play"
         self._previously_selected = "play"
 
+    class Movement():
+        ACC = 0.5
+        FRIC = -0.12
+        vec = pg.math.Vector2
+
     class Colors():
         BLACK = (0, 0, 0)
         WHITE = (255, 255, 255)
@@ -99,6 +104,7 @@ class Game():
         """
         Function to run game
         """
+    
         
         if self._running is not True and self.framerate and self.name and self.dimensions:
             pg.init()
@@ -107,13 +113,12 @@ class Game():
             pg.display.set_icon(self.icon)
             self._running = True
             self._mainloop()
-
             print("Game loop started.")
         else:
             print("You have not initialized the game correctly, or the game is already running!")
 
     def get(self, var: str):
-        """m                                                                                                                m            
+        """                                                                                                                m            
         Gets and returns private vars
         """
         if var.lower() == "framerate":
@@ -269,7 +274,25 @@ class Game():
             self._clock.tick(self.framerate)
 
     def _physicsEngineGameLoop(self):
-        pass
+        pg.mouse.set_visible(False)
+        x, y = self.dimensions
+
+        while self._playrunning:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    self._running = False
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        if self._status == "play":
+                            self._status = "main"
+                            
+                            self._playrunning = False
+                            self._mainloop()
+        
+        self._window.blit(self.Colors.BLACK, (0,0))
+        pg.display.update()
+
+        self._clock.tick(self.framerate)
 
     def _selectloop(self):
         self._selected = "back"
@@ -300,7 +323,6 @@ class Game():
         selectionOutline.center = centerBack.center
 
         while self._playrunning:
-            events = pg.event.get()
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self._running = False
@@ -321,6 +343,7 @@ class Game():
                                 self._playrunning = False
                                 self._mainloop()
 
+           
             self._window.blit(self.PLAYSCREEN, (0,0))
             #self.displaytext(playPlaceholder, centerPlaceholder)
             #self.displaytext(backText, centerBack)
