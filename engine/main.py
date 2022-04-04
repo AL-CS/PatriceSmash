@@ -1,7 +1,10 @@
 import csv
+import time
+from numpy import random
 import pygame as pg
 import json
 from pygame.rect import *  
+import characterController as cc
 
 class Game():
     
@@ -13,12 +16,23 @@ class Game():
     _optionsrunning = False
     _creditsrunning = False
 
+    ACC = 4
+    FRIC = -0.2
+    vec = pg.math.Vector2
+
     _characterList = {
-        "alive": [],
-        "dead": []
+        "alive": pg.sprite.Group(),
+        "dead": pg.sprite.Group()
+    }
+
+    _binding = {
+        "wasd": None,
+        "arrow": None
     }
 
     def __init__(self):
+        self.dimensions: tuple = (1920,1000)
+        self._window = pg.display.set_mode(self.dimensions, pg.RESIZABLE)
 
         pg.mixer.init()  
         with open('../assets/resources/userSettings.json', 'r') as f:
@@ -32,8 +46,10 @@ class Game():
         self.PLAYSCREEN = self.loadimage("../assets/art/backgrounds/playscreen.png")
         self.framerate: int = None
         self.name: str = None
-        self.dimensions: tuple = None
         self.icon: pg.Surface = None
+
+        self.collisionBoxes = pg.sprite.Group()
+        self.all_sprites = pg.sprite.Group()
 
         self._clock = pg.time.Clock()
 
@@ -41,17 +57,43 @@ class Game():
         self._selected = "play"
         self._previously_selected = "play"
 
-    class Movement():
-        ACC = 0.5
-        FRIC = -0.12
-        vec = pg.math.Vector2
-
     class Colors():
         BLACK = (0, 0, 0)
         WHITE = (255, 255, 255)
         RED = (255, 0, 0)
         GREEN = (0, 225, 0)
         BLUE = (0, 0, 225)
+
+    def __initCollisionBoxes__(self):
+        plat = cc.Platform()
+        self.collisionBoxes.add(plat)
+        self.all_sprites.add(plat)
+
+    def __initChars__(self):
+        char = cc.Character("Test", "power", "desc", "cube.png")
+        self._characterList["alive"].add(char)
+        self.all_sprites.add(char)
+        self._binding["wasd"] = char
+        char.bind = "wasd"
+        char.initChar()
+
+        char2 = cc.Character("Test2", "", "", "cube.png")
+        self._characterList["alive"].add(char2)
+        self.all_sprites.add(char2)
+        self._binding["arrow"] = char2
+        char2.bind = "arrow"
+        char2.initChar()
+
+        #characters = self.loadcsv('../assets/resources/characters.csv')
+        #compiliedCharacters = self.compileCSVList(characters)
+
+        #for character in compiliedCharacters:
+            #char = cc.Character(character[0], character[1], character[2])
+            #self._characterList["alive"].add(char)
+            #self.all_sprites.add(char)
+
+        #for char in self._characterList["alive"].sprites():
+           # print(char.name)
 
     def updateAudioListAndWriteToJSON(self, boolVal: bool):
         self._SOUNDENABLED = boolVal
@@ -71,7 +113,7 @@ class Game():
         """
         Function to return an image by filename passed a string in the pygame Surface format
         """
-        img = pg.image.load(image)
+        img = pg.image.load(image).convert()
         return img
     
     def loadcsv(self, location):
@@ -107,8 +149,8 @@ class Game():
     
         
         if self._running is not True and self.framerate and self.name and self.dimensions:
+
             pg.init()
-            self._window = pg.display.set_mode(self.dimensions)
             pg.display.set_caption(self.name)
             pg.display.set_icon(self.icon)
             self._running = True
@@ -261,7 +303,6 @@ class Game():
 
             self._window.blit(self.BACKGROUND, (0,0))
 
-
             self.displaytext(mainmenu, centerMainText)
             self.displaytext(playText, centerPlayText)
             self.displaytext(optionsText, centerOptionsText)
@@ -295,18 +336,14 @@ class Game():
         self._clock.tick(self.framerate)
 
     def _selectloop(self):
+        self.__initChars__()
+        self.__initCollisionBoxes__()
         self._selected = "back"
         pg.mouse.set_visible(False)
         x, y = self.dimensions
 
         maps = self.loadcsv('../assets/resources/maps.csv')
         compiliedMaps = self.compileCSVList(maps)
-
-        characters = self.loadcsv('../assets/resources/characters.csv')
-        compiliedCharacters = self.compileCSVList(characters)
-
-        for character in compiliedCharacters:
-            print(character[0])
 
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
 
@@ -330,21 +367,54 @@ class Game():
                     if event.key == pg.K_ESCAPE:
                         if self._status == "play":
                             self._status = "main"
+
+                            for char in self.all_sprites:
+                                char.kill()
                             
                             self._playrunning = False
                             self._mainloop()
+
+                    if event.key == pg.K_w:
+                        if self._status == "play":
+                            char = self._binding["wasd"]
+                            char.jump()
+
+                    if event.key == pg.K_UP:
+                        if self._status == "play":
+                            char = self._binding["arrow"]
+                            char.jump()
+
+                    if event.key == pg.K_x:
+                        if self._status == "play":
+                            char = self._binding["wasd"]
+                            char.attk(self._binding)
+
+                    if event.key == pg.K_KP_PERIOD:
+                        if self._status == "play":
+                            char = self._binding["arrow"]
+                            char.attk(self._binding)
 
                     if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
                         self.playIfActive(self._clickSoundEffect)
                         if self._status == "play":
                             if self._selected == "back":
                                 self._status = "main"
+
+                                for char in self.all_sprites:
+                                    char.kill()
                             
                                 self._playrunning = False
                                 self._mainloop()
 
-           
-            self._window.blit(self.PLAYSCREEN, (0,0))
+            self._window.blit(self.PLAYSCREEN, (190,0))
+        
+
+            for entity in self._characterList["alive"]:
+                entity.move()
+                entity.update(self.collisionBoxes, self._characterList)
+
+            for entity in self.all_sprites:
+                entity.draw()
             #self.displaytext(playPlaceholder, centerPlaceholder)
             #self.displaytext(backText, centerBack)
 
