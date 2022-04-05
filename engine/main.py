@@ -31,7 +31,7 @@ class Game():
     }
 
     def __init__(self):
-        self.dimensions: tuple = (1920,1000)
+        self.dimensions: tuple = (1920,1080)
         self._window = pg.display.set_mode(self.dimensions, pg.RESIZABLE)
 
         pg.mixer.init()  
@@ -77,7 +77,7 @@ class Game():
         char.bind = "wasd"
         char.initChar()
 
-        char2 = cc.Character("Test2", "", "", "cube.png")
+        char2 = cc.Character("Test2", "", "", "cube2.png")
         self._characterList["alive"].add(char2)
         self.all_sprites.add(char2)
         self._binding["arrow"] = char2
@@ -346,11 +346,14 @@ class Game():
         compiliedMaps = self.compileCSVList(maps)
 
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
+        arcade_32 = self.getfont("../assets/resources/fonts/arcade.ttf", 32)
 
-        playPlaceholder = self.renderfont(arcade_72, "Insert info here", True, (255, 255, 255))
+        playPlaceholder = self.renderfont(arcade_32, "P2 (3): 250%", True, (255, 255, 255))
+        playPlaceholder2 = self.renderfont(arcade_32, "P1 (3): 250%", True, (255, 255, 255))
         backText = self.renderfont(arcade_72, "Back", True, (255, 255, 255))
 
-        centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/4)))
+        centerPlaceholder = playPlaceholder.get_rect(center=((1525), (y/5.25)))
+        centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), y/6.5))
         centerBack = backText.get_rect(center=((x/2), (y/2.5)))
 
         selectionOutline = centerBack.inflate(30,30)
@@ -387,12 +390,22 @@ class Game():
                     if event.key == pg.K_x:
                         if self._status == "play":
                             char = self._binding["wasd"]
-                            char.attk(self._binding)
+                            damage, lives = char.attk(self._binding)
+
+                            if damage and lives is not None:
+
+                                playPlaceholder = self.renderfont(arcade_32, f"P2 ({lives}): {round(damage)}%", True, (255, 255, 255))
+                                centerPlaceholder = playPlaceholder.get_rect(center=((1525), (y/5.25)))
 
                     if event.key == pg.K_KP_PERIOD:
                         if self._status == "play":
                             char = self._binding["arrow"]
-                            char.attk(self._binding)
+                            damage, lives = char.attk(self._binding)
+
+                            if damage and lives is not None:
+
+                                playPlaceholder2 = self.renderfont(arcade_32, f"P1 ({lives}): {round(damage)}%", True, (255, 255, 255))
+                                centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), (y/6.5)))
 
                     if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
                         self.playIfActive(self._clickSoundEffect)
@@ -406,6 +419,7 @@ class Game():
                                 self._playrunning = False
                                 self._mainloop()
 
+            #190
             self._window.blit(self.PLAYSCREEN, (190,0))
         
 
@@ -415,7 +429,9 @@ class Game():
 
             for entity in self.all_sprites:
                 entity.draw()
-            #self.displaytext(playPlaceholder, centerPlaceholder)
+
+            self.displaytext(playPlaceholder, centerPlaceholder)
+            self.displaytext(playPlaceholder2, centerPlaceHolder2)
             #self.displaytext(backText, centerBack)
 
             #pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)

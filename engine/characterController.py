@@ -1,5 +1,7 @@
+import asyncio
 import math
-from numpy import random
+import time
+from numpy import character, random
 import pygame as pg
 import main as control
 
@@ -14,7 +16,11 @@ class Character(pg.sprite.Sprite):
 
     def __init__(self, name, power, desc, imgpath):
         super().__init__()
-        self.image = self.game.loadimage(imgpath)
+        self.imageattack = self.game.loadimage("attack.png")
+        self.imagereg = self.game.loadimage(imgpath)
+        self.imageattacked = self.game.loadimage("attacked.png")
+
+        self.image = self.imagereg
         self.rect = self.image.get_rect(center=((self.x/2), (self.y/2)))
 
         self.idle: pg.Surface = None
@@ -24,6 +30,7 @@ class Character(pg.sprite.Sprite):
         self.health: float = 250
         self.name: str = name
         self.alive: bool = True
+        self.canattack: bool = True
         self.lives: int = 3
         self.bind = None
 
@@ -44,7 +51,7 @@ class Character(pg.sprite.Sprite):
             randomType = random.choice(types, p=probs)
             return randomType
 
-    def initChar(self):
+    def initChar(self): 
         if self.bind is not None:
             if self.bind == "wasd":
                 self.pos.x = 225
@@ -52,7 +59,8 @@ class Character(pg.sprite.Sprite):
                 self.pos.x = 1693
 
     def check(self):
-        return self.alive
+        if self.alive and self.canattack is True:
+            return True
 
     def draw(self):
         self.game._window.blit(self.image, self.rect)
@@ -90,8 +98,11 @@ class Character(pg.sprite.Sprite):
                 self.pos.x = 215
             self.rect.midbottom = self.pos
 
+
     def attk(self, binding):
         if self.check():
+            health_remaining = None
+            lives = None
             if self.bind == "wasd":
                 enemy = binding["arrow"]
             elif self.bind == "arrow":
@@ -105,13 +116,32 @@ class Character(pg.sprite.Sprite):
 
             damageTypes = self.damagetypes()
 
-            if distance <= 130:
+            if distance <= 175:
+                self.image = self.imageattack
                 if self.bind == "wasd":
                     todamage = binding["arrow"]
-                    todamage.damage(damageTypes.chooseRandomType(), 100) 
+                    damage = damageTypes.chooseRandomType()
+                    health_remaining = todamage.damage(damage) 
+                    lives = todamage.lives
+
+                    self.canattack = False
+                    todamage.canattack = False
+                    self.canattack = True
+                    todamage.canattack = True
+
                 if self.bind == "arrow":
                     todamage = binding["wasd"]
-                    todamage.damage(damageTypes.chooseRandomType(), 100)
+                    damage = damageTypes.chooseRandomType()
+                    health_remaining = todamage.damage(damage)
+                    lives = todamage.lives
+
+                    self.canattack = False
+                    todamage.canattack = False
+                    self.canattack = True
+                    todamage.canattack = True
+
+                self.image = self.imagereg
+            return health_remaining, lives
 
     def jump(self):
         if self.check():
@@ -119,7 +149,6 @@ class Character(pg.sprite.Sprite):
             if self.jum >= 0:
                 self.vel.y = -30
     
-
     def damage(self, type, custom: float = None):
         if self.check():
             if self.alive is True:
@@ -131,18 +160,24 @@ class Character(pg.sprite.Sprite):
                 else:
                     randomDamage = custom
                 self.health -= randomDamage
+                self.image = self.imageattacked
                 print(self.health)
 
-                if self.health <= 0:
+                if self.health < 1:
                     if self.lives > 1:
                         self.lives -= 1
                         self.health = 250
 
 
                         if self.bind == "wasd":
+                            self.canattack = False
                             self.pos = self.vec((225, 385))
+                            self.canattack = True
+
                         elif self.bind == "arrow":
-                            self.pos = self.vec((1693, 385))               
+                            self.canattack = False
+                            self.pos = self.vec((1693, 385))    
+                            self.canattack = True
 
                         print(f"{self.name} has {self.lives} lives left!")
 
@@ -154,6 +189,8 @@ class Character(pg.sprite.Sprite):
                         self.alive = False
                         self.kill()
                         print(f"{self.name} died!")
+                self.image = self.imagereg
+                return self.health
 
 class Platform(pg.sprite.Sprite):
     game = control.game
