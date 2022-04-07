@@ -37,13 +37,16 @@ class Game():
         pg.mixer.init()  
         with open('../assets/resources/userSettings.json', 'r') as f:
             self.dictData = json.loads(f.read())
+            f.close()
         
         self._clickSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/select.wav")
         self.swishSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/swish.wav")
+        self._outbackSong = pg.mixer.Sound("../assets/sounds/Outback.wav")
+        self._punchSoundEffect = pg.mixer.Sound("../assets/sounds/punch.wav")
         self._SOUNDENABLED = self.dictData["audio"]
 
         self.BACKGROUND = self.loadimage("../assets/art/backgrounds/background.png")
-        self.PLAYSCREEN = self.loadimage("../assets/art/backgrounds/playscreen.png")
+        self.PLAYSCREEN = self.loadimage("../assets/art/backgrounds/outback.png")
         self.framerate: int = None
         self.name: str = None
         self.icon: pg.Surface = None
@@ -101,8 +104,8 @@ class Game():
             compiled = json.dumps(self.dictData)
             f.write(compiled)
 
-    def playIfActive(self, sound: pg.mixer.Sound):
-        if self._SOUNDENABLED is True: sound.play()
+    def playIfActive(self, sound: pg.mixer.Sound, loops: int = 0):
+        if self._SOUNDENABLED is True: sound.play(loops=loops)
         
     def draw_rect_alpha(self, surface, color, rect):
         shape_surf = pg.Surface(pg.Rect(rect).size, pg.SRCALPHA)
@@ -141,6 +144,11 @@ class Game():
 
             csvOut.append(temp)        
         return csvOut 
+    
+    def convertSeconds(self, seconds):
+        min, sec = divmod(seconds, 60)
+        hour, min = divmod(min, 60)
+        return "%02d:%02d" % (min, sec)
 
     def run(self):
         """
@@ -336,8 +344,15 @@ class Game():
         self._clock.tick(self.framerate)
 
     def _selectloop(self):
+        counter = 300
         self.__initChars__()
         self.__initCollisionBoxes__()
+
+        BASE = {"healthValues": {"P1": 250, "P2": 250}, "lives": {"P1": 3, "P2": 3}}
+        with open("../assets/resources/gameValues.json", "w") as f:
+            f.write(json.dumps(BASE))
+            f.close()
+
         self._selected = "back"
         pg.mouse.set_visible(False)
         x, y = self.dimensions
@@ -348,19 +363,23 @@ class Game():
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
         arcade_32 = self.getfont("../assets/resources/fonts/arcade.ttf", 32)
 
-        playPlaceholder = self.renderfont(arcade_32, "P2 (3): 250%", True, (255, 255, 255))
-        playPlaceholder2 = self.renderfont(arcade_32, "P1 (3): 250%", True, (255, 255, 255))
+        timerText = self.renderfont(arcade_32, f"Time Left: {self.convertSeconds(counter)}", True, (255, 255, 255))
         backText = self.renderfont(arcade_72, "Back", True, (255, 255, 255))
 
-        centerPlaceholder = playPlaceholder.get_rect(center=((1525), (y/5.25)))
-        centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), y/6.5))
+        #centerPlaceholder = playPlaceholder.get_rect(center=((1525), (y/5.25)))
+        #centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), y/6.5))
         centerBack = backText.get_rect(center=((x/2), (y/2.5)))
 
         selectionOutline = centerBack.inflate(30,30)
 
-        centerPlaceholder.inflate(30,30)
         centerBack.inflate(30, 30)
         selectionOutline.center = centerBack.center
+
+        self.playIfActive(self._outbackSong, 999)
+
+        startTicks = pg.time.get_ticks()
+        timerEvent = pg.USEREVENT + 1 
+        pg.time.set_timer(timerEvent, 1000)
 
         while self._playrunning:
             for event in pg.event.get():
@@ -373,6 +392,10 @@ class Game():
 
                             for char in self.all_sprites:
                                 char.kill()
+
+                            self._outbackSong.fadeout(1000)
+                            time.sleep(1)
+                            self._outbackSong.stop()
                             
                             self._playrunning = False
                             self._mainloop()
@@ -390,22 +413,16 @@ class Game():
                     if event.key == pg.K_x:
                         if self._status == "play":
                             char = self._binding["wasd"]
-                            damage, lives = char.attk(self._binding)
-
-                            if damage and lives is not None:
-
-                                playPlaceholder = self.renderfont(arcade_32, f"P2 ({lives}): {round(damage)}%", True, (255, 255, 255))
-                                centerPlaceholder = playPlaceholder.get_rect(center=((1525), (y/5.25)))
+                            val = char.attk(self._binding)
+                            if val is True:
+                                self.playIfActive(self._punchSoundEffect)
 
                     if event.key == pg.K_KP_PERIOD:
                         if self._status == "play":
                             char = self._binding["arrow"]
-                            damage, lives = char.attk(self._binding)
-
-                            if damage and lives is not None:
-
-                                playPlaceholder2 = self.renderfont(arcade_32, f"P1 ({lives}): {round(damage)}%", True, (255, 255, 255))
-                                centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), (y/6.5)))
+                            val = char.attk(self._binding)
+                            if val is True:
+                                self.playIfActive(self._punchSoundEffect)
 
                     if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
                         self.playIfActive(self._clickSoundEffect)
@@ -418,10 +435,30 @@ class Game():
                             
                                 self._playrunning = False
                                 self._mainloop()
+                elif event.type == timerEvent:
+                    counter -=1
+                    timerText = self.renderfont(arcade_32, f"Time Left: {self.convertSeconds(counter)}", True, (255, 255, 255))
+                    
+                    if counter == 0:
+                        pg.time.set_timer(timerEvent, 0)
+
+            with open("../assets/resources/gameValues.json", "r") as f:
+                jsonValues = json.loads(f.read())
+                f.close()
+
+            P1_health = jsonValues["healthValues"]["P1"]
+            P2_health = jsonValues["healthValues"]["P2"]
+            P1_lives = jsonValues["lives"]["P1"]
+            P2_lives = jsonValues["lives"]["P2"]
+
+            playPlaceholder = self.renderfont(arcade_32, f"P2 ({P2_lives}): {round(P2_health)}%", True, (255, 255, 255))
+            centerPlaceholder = playPlaceholder.get_rect(center=((1525), (y/5.25)))
+
+            playPlaceholder2 = self.renderfont(arcade_32, f"P1 ({P1_lives}): {round(P1_health)}%", True, (255, 255, 255))
+            centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), (y/6.5)))
 
             #190
             self._window.blit(self.PLAYSCREEN, (190,0))
-        
 
             for entity in self._characterList["alive"]:
                 entity.move()
@@ -430,8 +467,13 @@ class Game():
             for entity in self.all_sprites:
                 entity.draw()
 
+            
+
+            centerTimer = timerText.get_rect(center=((450), (y/6.5)))
+
             self.displaytext(playPlaceholder, centerPlaceholder)
             self.displaytext(playPlaceholder2, centerPlaceHolder2)
+            self.displaytext(timerText, centerTimer)
             #self.displaytext(backText, centerBack)
 
             #pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)

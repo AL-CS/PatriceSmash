@@ -1,4 +1,5 @@
 import asyncio
+import json
 import math
 import time
 from numpy import character, random
@@ -99,7 +100,7 @@ class Character(pg.sprite.Sprite):
             self.rect.midbottom = self.pos
 
 
-    def attk(self, binding):
+    def attk(self, binding) -> bool:
         if self.check():
             health_remaining = None
             lives = None
@@ -124,10 +125,25 @@ class Character(pg.sprite.Sprite):
                     health_remaining = todamage.damage(damage) 
                     lives = todamage.lives
 
-                    self.canattack = False
-                    todamage.canattack = False
-                    self.canattack = True
-                    todamage.canattack = True
+                    with open("../assets/resources/gameValues.json", "r") as f:
+                        dataIn = json.loads(f.read())
+                        f.close()
+
+                    if health_remaining is not None:
+                        if health_remaining > 0:
+                            dataIn["healthValues"]["P2"] = health_remaining
+                            dataIn["lives"]["P2"] = lives   
+
+                        elif health_remaining <= 0:
+                            dataIn["healthValues"]["P2"] = 0
+                            dataIn["lives"]["P2"] = lives
+
+                    elif health_remaining is None:
+                        health_remaining = 0
+
+                    with open("../assets/resources/gameValues.json", "w") as f:
+                        f.write(json.dumps(dataIn))
+                        f.close()
 
                 if self.bind == "arrow":
                     todamage = binding["wasd"]
@@ -135,13 +151,28 @@ class Character(pg.sprite.Sprite):
                     health_remaining = todamage.damage(damage)
                     lives = todamage.lives
 
-                    self.canattack = False
-                    todamage.canattack = False
-                    self.canattack = True
-                    todamage.canattack = True
+                    with open("../assets/resources/gameValues.json", "r") as f:
+                        dataIn = json.loads(f.read())
+                        f.close()
+
+                    if health_remaining > 0:
+                        dataIn["healthValues"]["P1"] = health_remaining
+                        dataIn["lives"]["P1"] = lives
+
+                    elif health_remaining <= 0:
+                        dataIn["healthValues"]["P1"] = 0
+                        dataIn["lives"]["P1"] = lives
+
+                    with open("../assets/resources/gameValues.json", "w") as f:
+                        f.write(json.dumps(dataIn))
+                        f.close()
 
                 self.image = self.imagereg
-            return health_remaining, lives
+                if distance <= 175:
+                    landed = True
+                else:
+                    landed = False
+                return landed
 
     def jump(self):
         if self.check():
@@ -195,13 +226,17 @@ class Character(pg.sprite.Sprite):
 class Platform(pg.sprite.Sprite):
     game = control.game
     x, y= game.dimensions
+
+    TESTMAPPLATY = 800
+    OUTBACKY = 690
+
     def __init__(self):  
         super().__init__()
         self.surf = pg.Surface((self.game.dimensions[0], 10))
         self.surf.fill((127, 33, 33))
         self.surf.set_colorkey((127, 33, 33))
         self.surf.set_alpha(100)
-        self.rect = self.surf.get_rect(center = (self.x/2, 800))
+        self.rect = self.surf.get_rect(center = (self.x/2, self.OUTBACKY))
     
     def draw(self):
         self.game._window.blit(self.surf, self.rect)
