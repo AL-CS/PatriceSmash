@@ -2,6 +2,7 @@ import asyncio
 import json
 import math
 import time
+import threading
 from numpy import character, random
 import pygame as pg
 import main as control
@@ -34,6 +35,7 @@ class Character(pg.sprite.Sprite):
         self.canattack: bool = True
         self.lives: int = 3
         self.bind = None
+        self.cooldown: int = 0
 
         # movement vars
         self.jum = 2
@@ -59,9 +61,15 @@ class Character(pg.sprite.Sprite):
             elif self.bind == "arrow":
                 self.pos.x = 1693
 
-    def check(self):
-        if self.alive and self.canattack is True:
+    def check(self,status=False):
+        if self.alive and self.canattack is True and status is False:
             return True
+
+    def timercooldown(self):
+        self.cooldown = 1
+        for i in range(1):
+            time.sleep(1)
+            self.cooldown -= 1
 
     def draw(self):
         self.game._window.blit(self.image, self.rect)
@@ -74,8 +82,8 @@ class Character(pg.sprite.Sprite):
             self.pos.y = hits[0].rect.top + 1
             self.vel.y = 0
 
-    def move(self):
-        if self.check():
+    def move(self, status):
+        if self.check(status):
             self.acc = self.vec(0,1.5)
             pressedKeys = pg.key.get_pressed()
             if self.bind == "arrow":
@@ -99,80 +107,82 @@ class Character(pg.sprite.Sprite):
                 self.pos.x = 215
             self.rect.midbottom = self.pos
 
-
     def attk(self, binding) -> bool:
-        if self.check():
-            health_remaining = None
-            lives = None
-            if self.bind == "wasd":
-                enemy = binding["arrow"]
-            elif self.bind == "arrow":
-                enemy = binding["wasd"]
-
-            enpos = enemy.pos
-            pos = self.pos
-
-            distance = math.sqrt((enpos.x - pos.x) ** 2 + (enpos.y - pos.y) ** 2)
-            print(distance)
-
-            damageTypes = self.damagetypes()
-
-            if distance <= 175:
-                self.image = self.imageattack
+        if self.cooldown == 0:
+            t1 = threading.Thread(target=self.timercooldown)
+            t1.setDaemon(True)
+            t1.start()
+            if self.check():
+                health_remaining = None
+                lives = None
                 if self.bind == "wasd":
-                    todamage = binding["arrow"]
-                    damage = damageTypes.chooseRandomType()
-                    health_remaining = todamage.damage(damage) 
-                    lives = todamage.lives
+                    enemy = binding["arrow"]
+                elif self.bind == "arrow":
+                    enemy = binding["wasd"]
 
-                    with open("../assets/resources/gameValues.json", "r") as f:
-                        dataIn = json.loads(f.read())
-                        f.close()
+                enpos = enemy.pos
+                pos = self.pos
 
-                    if health_remaining is not None:
+                distance = math.sqrt((enpos.x - pos.x) ** 2 + (enpos.y - pos.y) ** 2)
+
+                damageTypes = self.damagetypes()
+
+                if distance <= 175:
+                    self.image = self.imageattack
+                    if self.bind == "wasd":
+                        todamage = binding["arrow"]
+                        damage = damageTypes.chooseRandomType()
+                        health_remaining = todamage.damage(damage) 
+                        lives = todamage.lives
+
+                        with open("../assets/resources/gameValues.json", "r") as f:
+                            dataIn = json.loads(f.read())
+                            f.close()
+
+                        if health_remaining is not None:
+                            if health_remaining > 0:
+                                dataIn["healthValues"]["P2"] = health_remaining
+                                dataIn["lives"]["P2"] = lives   
+
+                            elif health_remaining <= 0:
+                                dataIn["healthValues"]["P2"] = 0
+                                dataIn["lives"]["P2"] = lives
+
+                        elif health_remaining is None:
+                            health_remaining = 0
+
+                        with open("../assets/resources/gameValues.json", "w") as f:
+                            f.write(json.dumps(dataIn))
+                            f.close()
+
+                    if self.bind == "arrow":
+                        todamage = binding["wasd"]
+                        damage = damageTypes.chooseRandomType()
+                        health_remaining = todamage.damage(damage)
+                        lives = todamage.lives
+
+                        with open("../assets/resources/gameValues.json", "r") as f:
+                            dataIn = json.loads(f.read())
+                            f.close()
+
                         if health_remaining > 0:
-                            dataIn["healthValues"]["P2"] = health_remaining
-                            dataIn["lives"]["P2"] = lives   
+                            dataIn["healthValues"]["P1"] = health_remaining
+                            dataIn["lives"]["P1"] = lives
 
                         elif health_remaining <= 0:
-                            dataIn["healthValues"]["P2"] = 0
-                            dataIn["lives"]["P2"] = lives
+                            dataIn["healthValues"]["P1"] = 0
+                            dataIn["lives"]["P1"] = lives
 
-                    elif health_remaining is None:
-                        health_remaining = 0
+                        with open("../assets/resources/gameValues.json", "w") as f:
+                            f.write(json.dumps(dataIn))
+                            f.close()
 
-                    with open("../assets/resources/gameValues.json", "w") as f:
-                        f.write(json.dumps(dataIn))
-                        f.close()
-
-                if self.bind == "arrow":
-                    todamage = binding["wasd"]
-                    damage = damageTypes.chooseRandomType()
-                    health_remaining = todamage.damage(damage)
-                    lives = todamage.lives
-
-                    with open("../assets/resources/gameValues.json", "r") as f:
-                        dataIn = json.loads(f.read())
-                        f.close()
-
-                    if health_remaining > 0:
-                        dataIn["healthValues"]["P1"] = health_remaining
-                        dataIn["lives"]["P1"] = lives
-
-                    elif health_remaining <= 0:
-                        dataIn["healthValues"]["P1"] = 0
-                        dataIn["lives"]["P1"] = lives
-
-                    with open("../assets/resources/gameValues.json", "w") as f:
-                        f.write(json.dumps(dataIn))
-                        f.close()
-
-                self.image = self.imagereg
-                if distance <= 175:
-                    landed = True
-                else:
-                    landed = False
-                return landed
+                    self.image = self.imagereg
+                    if distance <= 175:
+                        landed = True
+                    else:
+                        landed = False
+                    return landed
 
     def jump(self):
         if self.check():
@@ -241,6 +251,18 @@ class Platform(pg.sprite.Sprite):
     def draw(self):
         self.game._window.blit(self.surf, self.rect)
 
+class GameOverOverlay(pg.sprite.Sprite):
+    game = control.game
+    x, y = game.dimensions
+
+    def __init__(self):
+        self.surf = pg.Surface(self.game.dimensions)
+        self.surf.fill((0, 0, 0, 255))
+        self.surf.set_alpha(127)
+        self.rect = self.surf.get_rect(center = (self.x/2, self.y/2))
+
+    def draw(self):
+        self.game._window.blit(self.surf, self.rect)
 #patrice = Character("Andrew", "", "")
 #damageTypes = patrice.damagetypes()
 #for i in range(100):

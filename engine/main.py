@@ -43,6 +43,7 @@ class Game():
         self.swishSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/swish.wav")
         self._outbackSong = pg.mixer.Sound("../assets/sounds/Outback.wav")
         self._punchSoundEffect = pg.mixer.Sound("../assets/sounds/punch.wav")
+        self._gameOverSoundEffect = pg.mixer.Sound("../assets/sounds/gameover.wav")
         self._SOUNDENABLED = self.dictData["audio"]
 
         self.BACKGROUND = self.loadimage("../assets/art/backgrounds/background.png")
@@ -344,6 +345,10 @@ class Game():
         self._clock.tick(self.framerate)
 
     def _selectloop(self):
+
+        overlay = cc.GameOverOverlay()
+
+        gameover = False
         counter = 300
         self.__initChars__()
         self.__initCollisionBoxes__()
@@ -363,12 +368,14 @@ class Game():
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
         arcade_32 = self.getfont("../assets/resources/fonts/arcade.ttf", 32)
 
+        gameOverText = self.renderfont(arcade_72, "GAME OVER", True, (255, 255, 255))
         timerText = self.renderfont(arcade_32, f"Time Left: {self.convertSeconds(counter)}", True, (255, 255, 255))
         backText = self.renderfont(arcade_72, "Back", True, (255, 255, 255))
 
         #centerPlaceholder = playPlaceholder.get_rect(center=((1525), (y/5.25)))
         #centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), y/6.5))
         centerBack = backText.get_rect(center=((x/2), (y/2.5)))
+        centerGameOver = gameOverText.get_rect(center=((x/2), (y/2)))
 
         selectionOutline = centerBack.inflate(30,30)
 
@@ -393,54 +400,45 @@ class Game():
                             for char in self.all_sprites:
                                 char.kill()
 
-                            self._outbackSong.fadeout(1000)
-                            time.sleep(1)
                             self._outbackSong.stop()
                             
                             self._playrunning = False
                             self._mainloop()
 
                     if event.key == pg.K_w:
-                        if self._status == "play":
+                        if self._status == "play" and gameover is False:
                             char = self._binding["wasd"]
                             char.jump()
 
                     if event.key == pg.K_UP:
-                        if self._status == "play":
+                        if self._status == "play" and gameover is False:
                             char = self._binding["arrow"]
                             char.jump()
 
                     if event.key == pg.K_x:
-                        if self._status == "play":
+                        if self._status == "play" and gameover is False:
                             char = self._binding["wasd"]
                             val = char.attk(self._binding)
                             if val is True:
                                 self.playIfActive(self._punchSoundEffect)
 
                     if event.key == pg.K_KP_PERIOD:
-                        if self._status == "play":
+                        if self._status == "play" and gameover is False:
                             char = self._binding["arrow"]
                             val = char.attk(self._binding)
                             if val is True:
                                 self.playIfActive(self._punchSoundEffect)
 
-                    if event.key == pg.K_RETURN or event.key == pg.K_KP_ENTER:
-                        self.playIfActive(self._clickSoundEffect)
-                        if self._status == "play":
-                            if self._selected == "back":
-                                self._status = "main"
-
-                                for char in self.all_sprites:
-                                    char.kill()
-                            
-                                self._playrunning = False
-                                self._mainloop()
                 elif event.type == timerEvent:
                     counter -=1
                     timerText = self.renderfont(arcade_32, f"Time Left: {self.convertSeconds(counter)}", True, (255, 255, 255))
                     
                     if counter == 0:
                         pg.time.set_timer(timerEvent, 0)
+                        self._outbackSong.fadeout(1)
+                        self._gameOverSoundEffect.play()    
+
+                        gameover = True                    
 
             with open("../assets/resources/gameValues.json", "r") as f:
                 jsonValues = json.loads(f.read())
@@ -461,19 +459,21 @@ class Game():
             self._window.blit(self.PLAYSCREEN, (190,0))
 
             for entity in self._characterList["alive"]:
-                entity.move()
+                entity.move(gameover)
                 entity.update(self.collisionBoxes, self._characterList)
 
             for entity in self.all_sprites:
                 entity.draw()
-
-            
 
             centerTimer = timerText.get_rect(center=((450), (y/6.5)))
 
             self.displaytext(playPlaceholder, centerPlaceholder)
             self.displaytext(playPlaceholder2, centerPlaceHolder2)
             self.displaytext(timerText, centerTimer)
+            
+            if gameover is True:
+                overlay.draw()
+                self.displaytext(gameOverText, centerGameOver)
             #self.displaytext(backText, centerBack)
 
             #pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
