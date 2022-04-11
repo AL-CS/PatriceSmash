@@ -18,10 +18,10 @@ class Character(pg.sprite.Sprite):
 
     def __init__(self, name, power, desc, imgpath):
         super().__init__()
-        self.imageattack = self.game.loadimage("attack.png")
+        self.imageattack = None
         self.imagereg = self.game.loadimage(imgpath)
-        self.imageattacked = self.game.loadimage("attacked.png")
-
+        self.imageattacked = None
+        
         self.image = self.imagereg
         self.rect = self.image.get_rect(center=((self.x/2), (self.y/2)))
 
