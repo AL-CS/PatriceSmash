@@ -12,7 +12,6 @@ class Game():
     Main game class holding major functions and variables
     """
     _running = False
-    _characterselectrunning = False    
     _playrunning = False
     _optionsrunning = False
     _creditsrunning = False
@@ -336,7 +335,7 @@ class Game():
 
             self._clock.tick(self.framerate)
 
-    def _characterSelectLoop(self):
+    def _characterAndMapSelectionLoop(self):
         pg.mouse.set_visible(False)
         x, y = self.dimensions
 
@@ -344,7 +343,7 @@ class Game():
         arcade_90 = self.getfont("../assets/resources/fonts/arcade.ttf", 90)
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
 
-        playPlaceholder = self.renderfont(funkmaster, "Choose Your Character", True, (255, 255, 255))
+        playPlaceholder = self.renderfont(funkmaster, "Game Options", True, (255, 255, 255))
         centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/5)))
 
         centerPlaceholder.inflate(30,30)
@@ -362,8 +361,6 @@ class Game():
                             self._mainloop()
         
         self._window.blit(self.BACKGROUND, (0,0))
-        self.displaytext(playPlaceholder, centerPlaceholder)
-
         pg.display.flip()
 
         self._clock.tick(self.framerate)
