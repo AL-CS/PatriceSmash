@@ -404,7 +404,7 @@ class Game():
         centerBack.inflate(30, 30)
         selectionOutline.center = centerBack.center
 
-        self.playIfActive(self._outbackSong, 999)
+        self.playIfActive(self._atlantisSong, 999)
 
         startTicks = pg.time.get_ticks()
         timerEvent = pg.USEREVENT + 1 
@@ -422,7 +422,7 @@ class Game():
                             for char in self.all_sprites:
                                 char.kill()
 
-                            self._outbackSong.stop()
+                            self._atlantisSong.stop()
                             
                             self._playrunning = False
                             self._mainloop()
@@ -457,7 +457,7 @@ class Game():
                     
                     if counter == 0:
                         pg.time.set_timer(timerEvent, 0)
-                        self._outbackSong.fadeout(1)
+                        self._atlantisSong.fadeout(1)
                         self._gameOverSoundEffect.play()    
 
                         gameover = True                    
@@ -478,7 +478,7 @@ class Game():
             centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), (y/6.5)))
 
             #190
-            self._window.blit(self.OUTBACKPLAYSCREEN, (190,0))
+            self._window.blit(self.ATLANTISPLAYSCREEN, (190,0))
 
             for entity in self._characterList["alive"]:
                 entity.move(gameover)
