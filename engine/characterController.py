@@ -135,7 +135,7 @@ class Character(pg.sprite.Sprite):
                         health_remaining = todamage.damage(damage) 
                         lives = todamage.lives
 
-                        with open("../assets/resources/gameValues.json", "r") as f:
+                        with open("../assets/resources/json/gameValues.json", "r") as f:
                             dataIn = json.loads(f.read())
                             f.close()
 
@@ -151,7 +151,7 @@ class Character(pg.sprite.Sprite):
                         elif health_remaining is None:
                             health_remaining = 0
 
-                        with open("../assets/resources/gameValues.json", "w") as f:
+                        with open("../assets/resources/json/gameValues.json", "w") as f:
                             f.write(json.dumps(dataIn))
                             f.close()
 
@@ -161,7 +161,7 @@ class Character(pg.sprite.Sprite):
                         health_remaining = todamage.damage(damage)
                         lives = todamage.lives
 
-                        with open("../assets/resources/gameValues.json", "r") as f:
+                        with open("../assets/resources/json/gameValues.json", "r") as f:
                             dataIn = json.loads(f.read())
                             f.close()
 
@@ -173,7 +173,7 @@ class Character(pg.sprite.Sprite):
                             dataIn["healthValues"]["P1"] = 0
                             dataIn["lives"]["P1"] = lives
 
-                        with open("../assets/resources/gameValues.json", "w") as f:
+                        with open("../assets/resources/json/gameValues.json", "w") as f:
                             f.write(json.dumps(dataIn))
                             f.close()
 

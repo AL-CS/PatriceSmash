@@ -35,7 +35,7 @@ class Game():
         self._window = pg.display.set_mode(self.dimensions, pg.RESIZABLE)
 
         pg.mixer.init()  
-        with open('../assets/resources/userSettings.json', 'r') as f:
+        with open('../assets/resources/json/userSettings.json', 'r') as f:
             self.dictData = json.loads(f.read())
             f.close()
 
@@ -51,10 +51,11 @@ class Game():
         self.SOUNDS = [self._clickSoundEffect, self.swishSoundEffect, self._punchSoundEffect, self._gameOverSoundEffect]
         self.MUSIC = [self._outbackSong, self._atlantisSong]
 
-        self.BACKGROUND = self.loadimage("../assets/art/backgrounds/background.png")
-        self.OUTBACKPLAYSCREEN = self.loadimage("../assets/art/backgrounds/outback.png")
-        self.TESTPLAYSCREEN = self.loadimage("../assets/art/backgrounds/playscreen.png")
-        self.ATLANTISPLAYSCREEN = self.loadimage("../assets/art/backgrounds/atlantis.png")
+        self.BACKGROUND = self.loadimage("../assets/art/backgrounds/mainmenu.png")
+        self.OUTBACKPLAYSCREEN = self.loadimage("../assets/art/maps/outback.png")
+        self.TESTPLAYSCREEN = self.loadimage("../assets/art/maps/test.png")
+        self.ATLANTISPLAYSCREEN = self.loadimage("../assets/art/maps/atlantis.png")
+        self.BATHROOMPLAYSCREEN = self.loadimage("../assets/art/maps/bathroom.png")
         self.framerate: int = None
         self.name: str = None
         self.icon: pg.Surface = None
@@ -108,7 +109,7 @@ class Game():
 
     def updateAudioListAndWriteToJSON(self, boolVal: bool):
         self._SOUNDENABLED = boolVal
-        with open('../assets/resources/userSettings.json', "w") as f:
+        with open('../assets/resources/json/userSettings.json', "w") as f:
             compiled = json.dumps(self.dictData)
             f.write(compiled)
 
@@ -375,7 +376,7 @@ class Game():
         self.__initCollisionBoxes__()
 
         BASE = {"healthValues": {"P1": 250, "P2": 250}, "lives": {"P1": 3, "P2": 3}}
-        with open("../assets/resources/gameValues.json", "w") as f:
+        with open("../assets/resources/json/gameValues.json", "w") as f:
             f.write(json.dumps(BASE))
             f.close()
 
@@ -383,7 +384,7 @@ class Game():
         pg.mouse.set_visible(False)
         x, y = self.dimensions
 
-        maps = self.loadcsv('../assets/resources/maps.csv')
+        maps = self.loadcsv('../assets/resources/csv/maps.csv')
         compiliedMaps = self.compileCSVList(maps)
 
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
@@ -461,7 +462,7 @@ class Game():
 
                         gameover = True                    
 
-            with open("../assets/resources/gameValues.json", "r") as f:
+            with open("../assets/resources/json/gameValues.json", "r") as f:
                 jsonValues = json.loads(f.read())
                 f.close()
 
