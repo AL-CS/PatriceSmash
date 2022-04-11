@@ -3,7 +3,7 @@ import json
 import math
 import time
 import threading
-from numpy import character, random
+from numpy import random
 import pygame as pg
 import main as control
 
@@ -201,8 +201,6 @@ class Character(pg.sprite.Sprite):
                 else:
                     randomDamage = custom
                 self.health -= randomDamage
-                self.image = self.imageattacked
-                print(self.health)
 
                 if self.health < 1:
                     if self.lives > 1:
@@ -230,7 +228,6 @@ class Character(pg.sprite.Sprite):
                         self.alive = False
                         self.kill()
                         print(f"{self.name} died!")
-                self.image = self.imagereg
                 return self.health
 
 class Platform(pg.sprite.Sprite):

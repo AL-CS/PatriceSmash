@@ -82,14 +82,14 @@ class Game():
         self.all_sprites.add(plat)
 
     def __initChars__(self) -> None:
-        char = cc.Character("Test", "power", "desc", "../assets/art/characters/cube.png")
+        char = cc.Character("Cube", "power", "desc", "../assets/art/characters/cube.png")
         self._characterList["alive"].add(char)
         self.all_sprites.add(char)
         self._binding["wasd"] = char
         char.bind = "wasd"
         char.initChar()
 
-        char2 = cc.Character("Test2", "", "", "../assets/art/characters/cube2.png")
+        char2 = cc.Character("Cube2", "", "", "../assets/art/characters/cube2.png")
         self._characterList["alive"].add(char2)
         self.all_sprites.add(char2)
         self._binding["arrow"] = char2
