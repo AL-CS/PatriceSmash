@@ -12,6 +12,7 @@ class Game():
     Main game class holding major functions and variables
     """
     _running = False
+    _characterselectrunning = False    
     _playrunning = False
     _optionsrunning = False
     _creditsrunning = False
@@ -38,16 +39,23 @@ class Game():
         with open('../assets/resources/userSettings.json', 'r') as f:
             self.dictData = json.loads(f.read())
             f.close()
-        
+
+        self._outbackSong = pg.mixer.Sound("../assets/sounds/songs/outback.wav")
+        self._atlantisSong = pg.mixer.Sound("../assets/sounds/songs/atlantis.wav")
         self._clickSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/select.wav")
         self.swishSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/swish.wav")
-        self._outbackSong = pg.mixer.Sound("../assets/sounds/Outback.wav")
         self._punchSoundEffect = pg.mixer.Sound("../assets/sounds/punch.wav")
         self._gameOverSoundEffect = pg.mixer.Sound("../assets/sounds/gameover.wav")
         self._SOUNDENABLED = self.dictData["audio"]
+        self._VOLUME = self.dictData["volume"]
+
+        self.SOUNDS = [self._clickSoundEffect, self.swishSoundEffect, self._punchSoundEffect, self._gameOverSoundEffect]
+        self.MUSIC = [self._outbackSong, self._atlantisSong]
 
         self.BACKGROUND = self.loadimage("../assets/art/backgrounds/background.png")
-        self.PLAYSCREEN = self.loadimage("../assets/art/backgrounds/outback.png")
+        self.OUTBACKPLAYSCREEN = self.loadimage("../assets/art/backgrounds/outback.png")
+        self.TESTPLAYSCREEN = self.loadimage("../assets/art/backgrounds/playscreen.png")
+        self.ATLANTISPLAYSCREEN = self.loadimage("../assets/art/backgrounds/atlantis.png")
         self.framerate: int = None
         self.name: str = None
         self.icon: pg.Surface = None
@@ -107,6 +115,11 @@ class Game():
 
     def playIfActive(self, sound: pg.mixer.Sound, loops: int = 0):
         if self._SOUNDENABLED is True: sound.play(loops=loops)
+
+    def changeVolume(self, volume: float):
+        pg.mixer.music.set_volume(volume)
+        for sound in self.SOUNDS:
+            sound.set_volume(volume)
         
     def draw_rect_alpha(self, surface, color, rect):
         shape_surf = pg.Surface(pg.Rect(rect).size, pg.SRCALPHA)
@@ -323,9 +336,18 @@ class Game():
 
             self._clock.tick(self.framerate)
 
-    def _physicsEngineGameLoop(self):
+    def _characterSelectLoop(self):
         pg.mouse.set_visible(False)
         x, y = self.dimensions
+
+        funkmaster = self.getfont("../assets/resources/fonts/SFFunkMaster-Oblique.ttf", 120)
+        arcade_90 = self.getfont("../assets/resources/fonts/arcade.ttf", 90)
+        arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
+
+        playPlaceholder = self.renderfont(funkmaster, "Choose Your Character", True, (255, 255, 255))
+        centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/5)))
+
+        centerPlaceholder.inflate(30,30)
 
         while self._playrunning:
             for event in pg.event.get():
@@ -339,8 +361,10 @@ class Game():
                             self._playrunning = False
                             self._mainloop()
         
-        self._window.blit(self.Colors.BLACK, (0,0))
-        pg.display.update()
+        self._window.blit(self.BACKGROUND, (0,0))
+        self.displaytext(playPlaceholder, centerPlaceholder)
+
+        pg.display.flip()
 
         self._clock.tick(self.framerate)
 
@@ -456,7 +480,7 @@ class Game():
             centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), (y/6.5)))
 
             #190
-            self._window.blit(self.PLAYSCREEN, (190,0))
+            self._window.blit(self.OUTBACKPLAYSCREEN, (190,0))
 
             for entity in self._characterList["alive"]:
                 entity.move(gameover)
@@ -493,12 +517,14 @@ class Game():
 
         playPlaceholder = self.renderfont(funkmaster, "Game Options", True, (255, 255, 255))
         soundToggle = self.renderfont(arcade_60, f"Audio Enabled:{self._SOUNDENABLED}", True, (255, 255, 255))
+        volumeSelector = self.renderfont(arcade_60, f"Volume: {self._VOLUME}", True, (255, 255, 255))
         backText = self.renderfont(arcade_72, "Back", True, (255, 255, 255))
 
         centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/5)))
         horizontalRect = centerPlaceholder.inflate(1000, 10)
 
         centerAudioToggle = soundToggle.get_rect(center=((x/2), (y/1.75)))
+        centerVolumeSelector = volumeSelector.get_rect(center=((x/2), (y/3)))
         centerBack = backText.get_rect(center=((x/2), (y/1.25)))
 
         selectionOutline = centerAudioToggle.inflate(30,30)

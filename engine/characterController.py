@@ -109,9 +109,6 @@ class Character(pg.sprite.Sprite):
 
     def attk(self, binding) -> bool:
         if self.cooldown == 0:
-            t1 = threading.Thread(target=self.timercooldown)
-            t1.setDaemon(True)
-            t1.start()
             if self.check():
                 health_remaining = None
                 lives = None
@@ -128,6 +125,9 @@ class Character(pg.sprite.Sprite):
                 damageTypes = self.damagetypes()
 
                 if distance <= 175:
+                    t1 = threading.Thread(target=self.timercooldown)
+                    t1.setDaemon(True)
+                    t1.start()
                     self.image = self.imageattack
                     if self.bind == "wasd":
                         todamage = binding["arrow"]
@@ -239,6 +239,7 @@ class Platform(pg.sprite.Sprite):
 
     TESTMAPPLATY = 800
     OUTBACKY = 690
+    ATLANTISY = 800
 
     def __init__(self):  
         super().__init__()
