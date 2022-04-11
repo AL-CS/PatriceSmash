@@ -30,7 +30,7 @@ class Game():
         "arrow": None
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.dimensions: tuple = (1920,1080)
         self._window = pg.display.set_mode(self.dimensions, pg.RESIZABLE)
 
@@ -76,12 +76,12 @@ class Game():
         GREEN = (0, 225, 0)
         BLUE = (0, 0, 225)
 
-    def __initCollisionBoxes__(self):
+    def __initCollisionBoxes__(self) -> None:
         plat = cc.Platform()
         self.collisionBoxes.add(plat)
         self.all_sprites.add(plat)
 
-    def __initChars__(self):
+    def __initChars__(self) -> None:
         char = cc.Character("Test", "power", "desc", "../assets/art/characters/cube.png")
         self._characterList["alive"].add(char)
         self.all_sprites.add(char)
@@ -107,33 +107,33 @@ class Game():
         #for char in self._characterList["alive"].sprites():
            # print(char.name)
 
-    def updateAudioListAndWriteToJSON(self, boolVal: bool):
+    def updateAudioListAndWriteToJSON(self, boolVal: bool) -> None:
         self._SOUNDENABLED = boolVal
         with open('../assets/resources/json/userSettings.json', "w") as f:
             compiled = json.dumps(self.dictData)
             f.write(compiled)
 
-    def playIfActive(self, sound: pg.mixer.Sound, loops: int = 0):
+    def playIfActive(self, sound: pg.mixer.Sound, loops: int = 0) -> None:
         if self._SOUNDENABLED is True: sound.play(loops=loops)
 
-    def changeVolume(self, volume: float):
+    def changeVolume(self, volume: float) -> None:
         pg.mixer.music.set_volume(volume)
         for sound in self.SOUNDS:
             sound.set_volume(volume)
         
-    def draw_rect_alpha(self, surface, color, rect):
+    def draw_rect_alpha(self, surface, color, rect) -> None:
         shape_surf = pg.Surface(pg.Rect(rect).size, pg.SRCALPHA)
         pg.draw.rect(shape_surf, color, shape_surf.get_rect())
         surface.blit(shape_surf, rect)
 
-    def loadimage(self, image: str):
+    def loadimage(self, image: str) -> pg.surface.Surface:
         """
         Function to return an image by filename passed a string in the pygame Surface format
         """
         img = pg.image.load(image).convert()
         return img
     
-    def loadcsv(self, location):
+    def loadcsv(self, location) -> list:
         """
         Loads CSV file as dictonary list from relative or absolute location
         """
@@ -143,7 +143,7 @@ class Game():
                 final.append(line)
         return final
 
-    def compileCSVList(self, loadedcsv: list):
+    def compileCSVList(self, loadedcsv: list) -> list:
         """
         Take CSV file list as input (self.loadcsv(location))
         and output nested list
@@ -159,12 +159,12 @@ class Game():
             csvOut.append(temp)        
         return csvOut 
     
-    def convertSeconds(self, seconds):
+    def convertSeconds(self, seconds) -> str:
         min, sec = divmod(seconds, 60)
         hour, min = divmod(min, 60)
         return "%02d:%02d" % (min, sec)
 
-    def run(self):
+    def run(self) -> None:
         """
         Function to run game
         """
@@ -198,7 +198,7 @@ class Game():
         elif var.lower() == "game":
             return self
 
-    def getfont(self, fontname: str, size: int):
+    def getfont(self, fontname: str, size: int) -> pg.font.Font:
         """
         Takes font name and size and returns system font
         """
