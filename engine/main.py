@@ -1,4 +1,5 @@
 import csv
+from re import I
 import time
 from numpy import random
 import pygame as pg
@@ -82,14 +83,14 @@ class Game():
         self.all_sprites.add(plat)
 
     def __initChars__(self) -> None:
-        char = cc.Character("Cube", "power", "desc", "../assets/art/characters/cube.png")
+        char = cc.Character("Lance", "power", "desc", "../assets/art/characters/lancelot/lance_", "wasd")
         self._characterList["alive"].add(char)
         self.all_sprites.add(char)
         self._binding["wasd"] = char
         char.bind = "wasd"
         char.initChar()
 
-        char2 = cc.Character("Cube2", "", "", "../assets/art/characters/cube2.png")
+        char2 = cc.Character("Patrice", "", "", "../assets/art/characters/patrice/patrice_", "arrow")
         self._characterList["alive"].add(char2)
         self.all_sprites.add(char2)
         self._binding["arrow"] = char2
@@ -126,11 +127,15 @@ class Game():
         pg.draw.rect(shape_surf, color, shape_surf.get_rect())
         surface.blit(shape_surf, rect)
 
-    def loadimage(self, image: str) -> pg.surface.Surface:
+    def loadimage(self, image: str, size: tuple = None) -> pg.surface.Surface:
         """
         Function to return an image by filename passed a string in the pygame Surface format
         """
-        img = pg.image.load(image).convert()
+        img = pg.image.load(image).convert_alpha()
+
+        if size is not None:
+            img = pg.transform.scale(img, size)
+            
         return img
     
     def loadcsv(self, location) -> list:
@@ -404,7 +409,7 @@ class Game():
         centerBack.inflate(30, 30)
         selectionOutline.center = centerBack.center
 
-        self.playIfActive(self._atlantisSong, 999)
+        self.playIfActive(self._outbackSong, 999)
 
         startTicks = pg.time.get_ticks()
         timerEvent = pg.USEREVENT + 1 
@@ -422,7 +427,7 @@ class Game():
                             for char in self.all_sprites:
                                 char.kill()
 
-                            self._atlantisSong.stop()
+                            self._outbackSong.stop()
                             
                             self._playrunning = False
                             self._mainloop()
@@ -477,8 +482,7 @@ class Game():
             playPlaceholder2 = self.renderfont(arcade_32, f"P1 ({P1_lives}): {round(P1_health)}%", True, (255, 255, 255))
             centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), (y/6.5)))
 
-            #190
-            self._window.blit(self.ATLANTISPLAYSCREEN, (190,0))
+            self._window.blit(self.OUTBACKPLAYSCREEN, (190,0))
 
             for entity in self._characterList["alive"]:
                 entity.move(gameover)

@@ -16,10 +16,17 @@ class Character(pg.sprite.Sprite):
     vec = game.vec
     x, y = (1920, 1080)
 
-    def __init__(self, name, power, desc, imgpath):
+    def __init__(self, name, power, desc, imgpath, bind):
         super().__init__()
         self.imageattack = None
-        self.imagereg = self.game.loadimage(imgpath)
+
+        self.imageRight = self.game.loadimage(f"{imgpath}right.png")
+        self.imageLeft = self.game.loadimage(f"{imgpath}left.png")
+
+        if bind == "wasd":
+            self.imagereg = self.imageRight
+        elif bind == "arrow":
+            self.imagereg = self.imageLeft
         self.imageattacked = None
         
         self.image = self.imagereg
@@ -89,13 +96,17 @@ class Character(pg.sprite.Sprite):
             if self.bind == "arrow":
                 if pressedKeys[pg.K_LEFT]:
                     self.acc.x = -self.game.ACC
+                    self.image = self.imageLeft
                 if pressedKeys[pg.K_RIGHT]:
                     self.acc.x = self.game.ACC
+                    self.image = self.imageRight
             elif self.bind == "wasd":
                 if pressedKeys[pg.K_a]:
                     self.acc.x = -self.game.ACC
+                    self.image = self.imageLeft
                 if pressedKeys[pg.K_d]:
                     self.acc.x = self.game.ACC
+                    self.image = self.imageRight
 
             self.acc.x += self.vel.x * self.game.FRIC
             self.vel += self.acc
@@ -247,6 +258,7 @@ class Platform(pg.sprite.Sprite):
         self.rect = self.surf.get_rect(center = (self.x/2, self.OUTBACKY))
     
     def draw(self):
+        self.surf.set_alpha(128)
         self.game._window.blit(self.surf, self.rect)
 
 class GameOverOverlay(pg.sprite.Sprite):
