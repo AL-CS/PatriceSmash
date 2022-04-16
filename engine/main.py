@@ -1,6 +1,7 @@
+from concurrent.futures import thread
 import csv
 from re import I
-import time
+import threading
 from numpy import random
 import pygame as pg
 import json
@@ -16,6 +17,8 @@ class Game():
     _playrunning = False
     _optionsrunning = False
     _creditsrunning = False
+    _characterselectlooprunning = False
+    _mapselectlooprunning = False
 
     ACC = 4
     FRIC = -0.2
@@ -29,6 +32,11 @@ class Game():
     _binding = {
         "wasd": None,
         "arrow": None
+    }
+
+    _selectedChars = {
+        "p1": None,
+        "p2": None
     }
 
     def __init__(self) -> None:
@@ -69,7 +77,7 @@ class Game():
         self._status = "main"
         self._selected = "play"
         self._previously_selected = "play"
-
+            
     class Colors():
         BLACK = (0, 0, 0)
         WHITE = (255, 255, 255)
@@ -82,37 +90,31 @@ class Game():
         self.collisionBoxes.add(plat)
         self.all_sprites.add(plat)
 
-    def __initChars__(self) -> None:
-        char = cc.Character("Lance", "power", "desc", "../assets/art/characters/lancelot/lance_", "wasd")
+    def __initChars__(self, p1dict, p2dict) -> None:
+        char = cc.Character(p1dict["name"], p1dict["desc"], p1dict["imgpath"] + "/" + p1dict["filepathname"] + "_", "wasd")
         self._characterList["alive"].add(char)
         self.all_sprites.add(char)
         self._binding["wasd"] = char
         char.bind = "wasd"
         char.initChar()
 
-        char2 = cc.Character("Patrice", "", "", "../assets/art/characters/patrice/patrice_", "arrow")
+        char2 = cc.Character(p2dict["name"], p2dict["desc"], p2dict["imgpath"] + "/" + p2dict["filepathname"] + "_", "arrow")
         self._characterList["alive"].add(char2)
         self.all_sprites.add(char2)
         self._binding["arrow"] = char2
         char2.bind = "arrow"
         char2.initChar()
 
-        #characters = self.loadcsv('../assets/resources/characters.csv')
-        #compiliedCharacters = self.compileCSVList(characters)
-
-        #for character in compiliedCharacters:
-            #char = cc.Character(character[0], character[1], character[2])
-            #self._characterList["alive"].add(char)
-            #self.all_sprites.add(char)
-
-        #for char in self._characterList["alive"].sprites():
-           # print(char.name)
-
     def updateAudioListAndWriteToJSON(self, boolVal: bool) -> None:
         self._SOUNDENABLED = boolVal
         with open('../assets/resources/json/userSettings.json', "w") as f:
             compiled = json.dumps(self.dictData)
             f.write(compiled)
+
+    def getCharactersFromCSV(self):
+        characters = self.loadcsv('../assets/resources/csv/characters.csv')
+        compiliedCharacters = self.compileCSVList(characters)
+        return compiliedCharacters
 
     def playIfActive(self, sound: pg.mixer.Sound, loops: int = 0) -> None:
         if self._SOUNDENABLED is True: sound.play(loops=loops)
@@ -303,10 +305,10 @@ class Game():
                         if self._status == "main":
                             if self._selected == "play":
 
-                                self._status = "play"
+                                self._status = "select"
 
-                                self._playrunning = True
-                                self._selectloop()
+                                self._characterselectlooprunning = True
+                                self._characterAndMapSelectionLoop()
 
                                 self._running = False
                             elif self._selected == "options":
@@ -328,7 +330,7 @@ class Game():
                                 self._running = False
 
 
-            self._window.blit(self.BACKGROUND, (0,0))
+            self._window.blit(self.BACKGROUND, (175,0))
 
             self.displaytext(mainmenu, centerMainText)
             self.displaytext(playText, centerPlayText)
@@ -341,35 +343,150 @@ class Game():
 
             self._clock.tick(self.framerate)
 
+    def _mapSelectionLoop(self):
+        print("map select")
+
     def _characterAndMapSelectionLoop(self):
+
+        self._selected = "submit"
+
+        chars = self.getCharactersFromCSV()
+        characterLayoutMap = []
+
+        for char in chars:
+            dicte = {"name": char[0], "desc": char[3], "imgpath": char[1], "filepathname": char[2]}
+            characterLayoutMap.append(dicte)
+
+        indexP1 = 0
+        indexP2 = 0
+
         pg.mouse.set_visible(False)
         x, y = self.dimensions
 
-        funkmaster = self.getfont("../assets/resources/fonts/SFFunkMaster-Oblique.ttf", 120)
+        funkmaster = self.getfont("../assets/resources/fonts/SFFunkMaster-Oblique.ttf", 90)
         arcade_90 = self.getfont("../assets/resources/fonts/arcade.ttf", 90)
+        arcade_32 = self.getfont("../assets/resources/fonts/arcade.ttf", 32)
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
 
-        playPlaceholder = self.renderfont(funkmaster, "Game Options", True, (255, 255, 255))
+        playPlaceholder = self.renderfont(funkmaster, "Select Character", True, (255, 255, 255))
         centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/5)))
+
+        submitButton = self.renderfont(arcade_32, "Continue", True, (255,255,255))
+        centerSubmit = submitButton.get_rect(center=((x/2), (y/1.25)))
+
+        selectionOutline = centerSubmit.inflate(30, 30)
+        selectionOutline.center = centerSubmit.center
+ 
+        #beginSelectP1 = characterLayoutMap[indexP1]["name"]
+        #beginSelectP2 = characterLayoutMap[indexP2]["name"]
+        #P1SelectedChar = self.renderfont(arcade_32, f"{beginSelectP1}", True, (255,255,255))
+        #P2SelectedChar = self.renderfont(arcade_32, f"{beginSelectP2}", True, (255,255,255))
+        #centerP1Selection = P1SelectedChar.get_rect(center=((x / 2 - 350), (y-250)))
+        #centerP2Selection = P2SelectedChar.get_rect(center=((x / 2 + 350), (y-250)))
+
+        horizontalRect = centerPlaceholder.inflate(1000, 10)
 
         centerPlaceholder.inflate(30,30)
 
-        while self._playrunning:
+        while self._characterselectlooprunning:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self._running = False
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
-                        if self._status == "play":
+                        if self._status == "select":
                             self._status = "main"
                             
-                            self._playrunning = False
+                            self._characterselectlooprunning = False
                             self._mainloop()
-        
-        self._window.blit(self.BACKGROUND, (0,0))
-        pg.display.flip()
 
-        self._clock.tick(self.framerate)
+                    if event.key == pg.K_RETURN:
+                        if self._status == "select":
+                            if self._selected == "submit":
+
+                                self._selectedChars["p1"] = characterLayoutMap[indexP1]
+                                self._selectedChars["p2"] = characterLayoutMap[indexP2]
+
+                                self._status = "play"
+
+                                self._playrunning = True
+
+                                self._characterselectlooprunning = False
+                                self._selectloop()
+
+                                #self._status = "selectm"
+
+                                #self._mapselectlooprunning = True
+
+                                #self._characterselectlooprunning = False
+                                #self._characterAndMapSelectionLoop()
+
+
+                            
+
+                    if event.key == pg.K_DOWN:
+                        if self._status == "select":
+                            if indexP2 < len(characterLayoutMap) - 1:
+                                indexP2 += 1
+                            elif indexP2 == len(characterLayoutMap) - 1:
+                                indexP2 = 0
+
+                    if event.key == pg.K_UP:
+                        if self._status == "select":
+                            if indexP2 > 0:
+                                indexP2 -= 1
+                            elif indexP2 == 0:
+                                indexP2 = len(characterLayoutMap) - 1 
+
+                    if event.key == pg.K_s:
+                        if self._status == "select":
+                            if indexP1 < len(characterLayoutMap) - 1:
+                                indexP1 += 1
+                            elif indexP1 == len(characterLayoutMap) - 1:
+                                indexP1 = 0
+
+                    if event.key == pg.K_w:
+                        if self._status == "select":
+                            if indexP1 > 0:
+                                indexP1 -= 1
+                            elif indexP1 == 0:
+                                indexP1 = len(characterLayoutMap) - 1 
+
+            photoP1EXT = characterLayoutMap[indexP1]["imgpath"] + "/" + characterLayoutMap[indexP1]["filepathname"] + "_left.png"
+            photoP2EXT = characterLayoutMap[indexP2]["imgpath"] + "/" + characterLayoutMap[indexP2]["filepathname"] + "_left.png"
+            photoP1 = self.loadimage(photoP1EXT)
+            photoP2 = self.loadimage(photoP2EXT)
+
+            P1SelectedChar = self.renderfont(arcade_32, characterLayoutMap[indexP1]["name"], True, (255,255,255))
+            P2SelectedChar = self.renderfont(arcade_32, characterLayoutMap[indexP2]["name"], True, (255,255,255))
+
+            centerP1Selection = P1SelectedChar.get_rect(center=((x / 2 - 350), (y-400)))
+            centerP2Selection = P2SelectedChar.get_rect(center=((x / 2 + 350), (y-400)))
+
+            self._window.blit(self.BACKGROUND, (0,0))
+            if characterLayoutMap[indexP1]["filepathname"] != "patrice":
+                self._window.blit(photoP1, ((x / 2 - 425), (y-650)))
+            else:
+                updatedsize = pg.transform.scale(photoP1, (165, 134))
+                self._window.blit(updatedsize, ((x / 2 - 425), (y-600)))
+            if characterLayoutMap[indexP2]["filepathname"] != "patrice":
+                self._window.blit(photoP2, ((x / 2 + 275), (y-650)))
+            else:
+                updatedsize = pg.transform.scale(photoP2, (165, 134))
+                self._window.blit(updatedsize, ((x / 2 + 275), (y-600)))
+            
+            self.displaytext(playPlaceholder, centerPlaceholder)
+            self.displaytext(P1SelectedChar, centerP1Selection)
+            self.displaytext(P2SelectedChar, centerP2Selection)
+            self.displaytext(submitButton, centerSubmit)
+
+
+            pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
+            self.draw_rect_alpha(self._window, (225, 225, 225, 50), horizontalRect)
+
+            pg.display.update()
+
+            self._clock.tick(self.framerate)
 
     def _selectloop(self):
 
@@ -377,7 +494,7 @@ class Game():
 
         gameover = False
         counter = 300
-        self.__initChars__()
+        self.__initChars__(self._selectedChars["p1"], self._selectedChars["p2"])
         self.__initCollisionBoxes__()
 
         BASE = {"healthValues": {"P1": 250, "P2": 250}, "lives": {"P1": 3, "P2": 3}}
@@ -399,8 +516,6 @@ class Game():
         timerText = self.renderfont(arcade_32, f"Time Left: {self.convertSeconds(counter)}", True, (255, 255, 255))
         backText = self.renderfont(arcade_72, "Back", True, (255, 255, 255))
 
-        #centerPlaceholder = playPlaceholder.get_rect(center=((1525), (y/5.25)))
-        #centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), y/6.5))
         centerBack = backText.get_rect(center=((x/2), (y/2.5)))
         centerGameOver = gameOverText.get_rect(center=((x/2), (y/2)))
 
@@ -491,6 +606,13 @@ class Game():
             for entity in self.all_sprites:
                 entity.draw()
 
+            #for entity in self._characterList["alive"]:
+                #entity.move(gameover)
+               # entity.update(self.collisionBoxes, self._characterList)
+
+            #for entity in self.all_sprites:
+                #entity.draw()
+
             centerTimer = timerText.get_rect(center=((450), (y/6.5)))
 
             self.displaytext(playPlaceholder, centerPlaceholder)
@@ -500,9 +622,6 @@ class Game():
             if gameover is True:
                 overlay.draw()
                 self.displaytext(gameOverText, centerGameOver)
-            #self.displaytext(backText, centerBack)
-
-            #pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
 
             pg.display.update()
 
@@ -626,11 +745,13 @@ class Game():
         businessAnalyst = self.renderfont(arcade_60, "Business Analyst: Sean Pettenger", True, (255,255,255))
         graphicalArtist = self.renderfont(arcade_60, "Graphical Artist: Joshua Walker", True, (255,255,255))
         developer = self.renderfont(arcade_60, "Developer: Aidan Lelliott", True, (255,255,255))
+        music = self.renderfont(arcade_60, "Composer: Seth Wiley", True, (255,255,255))
         
-        centerProjectManager = projectManager.get_rect(center=((x/2), (y/2.75)))
-        centerBusinessAnalyst = businessAnalyst.get_rect(center=((x/2), (y/2.15)))
-        centerGraphicalArtist = graphicalArtist.get_rect(center=((x/2), (y/1.75)))
-        centerDeveloper = developer.get_rect(center=((x/2), (y/1.5)))
+        centerProjectManager = projectManager.get_rect(center=((x/2), (y-725)))
+        centerBusinessAnalyst = businessAnalyst.get_rect(center=((x/2), (y-625)))
+        centerGraphicalArtist = graphicalArtist.get_rect(center=((x/2), (y-525)))
+        centerDeveloper = developer.get_rect(center=((x/2), (y-425)))
+        centerMusic = music.get_rect(center=((x/2), (y-325)))
 
         centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/5)))
         horizontalRect = centerPlaceholder.inflate(1000, 10)
@@ -673,6 +794,7 @@ class Game():
             self.displaytext(businessAnalyst, centerBusinessAnalyst)
             self.displaytext(graphicalArtist, centerGraphicalArtist)
             self.displaytext(developer, centerDeveloper)
+            self.displaytext(music, centerMusic)
 
             pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
             self.draw_rect_alpha(self._window, (225, 225, 225, 50), horizontalRect)

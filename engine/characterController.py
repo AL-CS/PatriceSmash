@@ -16,7 +16,7 @@ class Character(pg.sprite.Sprite):
     vec = game.vec
     x, y = (1920, 1080)
 
-    def __init__(self, name, power, desc, imgpath, bind):
+    def __init__(self, name, desc, imgpath, bind):
         super().__init__()
         self.imageattack = None
 
@@ -135,11 +135,10 @@ class Character(pg.sprite.Sprite):
 
                 damageTypes = self.damagetypes()
 
-                if distance <= 175:
+                if distance <= 250:
                     t1 = threading.Thread(target=self.timercooldown)
                     t1.setDaemon(True)
                     t1.start()
-                    self.image = self.imageattack
                     if self.bind == "wasd":
                         todamage = binding["arrow"]
                         damage = damageTypes.chooseRandomType()
@@ -188,7 +187,6 @@ class Character(pg.sprite.Sprite):
                             f.write(json.dumps(dataIn))
                             f.close()
 
-                    self.image = self.imagereg
                     if distance <= 175:
                         landed = True
                     else:

@@ -1,7 +1,5 @@
-name,power,description
-Patrice,Giant rubber duck,The adorable butt-kicking duck
-Sir. Lancelot,Whale shark,The chivalious selachimorpha of Atlantis avenging his fellow Ikea sharks who met their demise from the vacuumn cleaner
-Roger the Ripped Kangaroo,Throws joeys,Roger the Ripped Kangaroo wielding Jacked Joey
-Grover,Super Grover,The vigilantee hero of Sesamee Street returning from his vicious battles with Ronald Grump
-Mr. Walker,Captain Chemistry,Armed with the power of learning
-Dennis the Dinosaur,Laser Eyes,
+name,imgpath,filepathname,description
+Patrice,../assets/art/characters/patrice,patrice,The adorable butt-kicking duck
+Sir. Lancelot,../assets/art/characters/lancelot,lance,The chivalious selachimorpha of Atlantis avenging his fellow Ikea sharks who met their demise from the vacuumn cleaner
+Roger the Kangaroo,../assets/art/characters/roger,roger,Roger the Ripped Kangaroo wielding Jacked Joey
+Mr. Walker,../assets/art/characters/chemistry,chemistry,Armed with the power of learning
