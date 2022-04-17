@@ -39,6 +39,8 @@ class Game():
         "p2": None
     }
 
+    _selectedMap = None
+
     def __init__(self) -> None:
         self.dimensions: tuple = (1920,1080)
         self._window = pg.display.set_mode(self.dimensions, pg.RESIZABLE)
@@ -48,8 +50,10 @@ class Game():
             self.dictData = json.loads(f.read())
             f.close()
 
-        self._outbackSong = pg.mixer.Sound("../assets/sounds/songs/outback.wav")
-        self._atlantisSong = pg.mixer.Sound("../assets/sounds/songs/atlantis.wav")
+        self.mainMenuSong = pg.mixer.Sound("../assets/sounds/songs/menu.wav")
+        self.channel = pg.mixer.Channel(0)
+
+
         self._clickSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/select.wav")
         self.swishSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/swish.wav")
         self._punchSoundEffect = pg.mixer.Sound("../assets/sounds/punch.wav")
@@ -58,13 +62,11 @@ class Game():
         self._VOLUME = self.dictData["volume"]
 
         self.SOUNDS = [self._clickSoundEffect, self.swishSoundEffect, self._punchSoundEffect, self._gameOverSoundEffect]
-        self.MUSIC = [self._outbackSong, self._atlantisSong]
+
 
         self.BACKGROUND = self.loadimage("../assets/art/backgrounds/mainmenu.png")
-        self.OUTBACKPLAYSCREEN = self.loadimage("../assets/art/maps/outback.png")
-        self.TESTPLAYSCREEN = self.loadimage("../assets/art/maps/test.png")
-        self.ATLANTISPLAYSCREEN = self.loadimage("../assets/art/maps/atlantis.png")
-        self.BATHROOMPLAYSCREEN = self.loadimage("../assets/art/maps/bathroom.png")
+        self.selectedmapimage = None
+
         self.framerate: int = None
         self.name: str = None
         self.icon: pg.Surface = None
@@ -86,7 +88,7 @@ class Game():
         BLUE = (0, 0, 225)
 
     def __initCollisionBoxes__(self) -> None:
-        plat = cc.Platform()
+        plat = cc.Platform(self._selectedMap)
         self.collisionBoxes.add(plat)
         self.all_sprites.add(plat)
 
@@ -110,14 +112,22 @@ class Game():
         with open('../assets/resources/json/userSettings.json', "w") as f:
             compiled = json.dumps(self.dictData)
             f.write(compiled)
+    
+    def getMapsFromCSV(self):
+        maps = self.loadcsv('../assets/resources/csv/maps.csv')
+        compiliedMaps = self.compileCSVList(maps)
+        return compiliedMaps
 
     def getCharactersFromCSV(self):
         characters = self.loadcsv('../assets/resources/csv/characters.csv')
         compiliedCharacters = self.compileCSVList(characters)
         return compiliedCharacters
 
-    def playIfActive(self, sound: pg.mixer.Sound, loops: int = 0) -> None:
-        if self._SOUNDENABLED is True: sound.play(loops=loops)
+    def playIfActive(self, sound: pg.mixer.Sound, loops: int = 0, channel: pg.mixer.Channel = None) -> None:
+        if channel is None:
+            if self._SOUNDENABLED is True: sound.play(loops=loops)
+        else:
+            channel.play(sound, loops)
 
     def changeVolume(self, volume: float) -> None:
         pg.mixer.music.set_volume(volume)
@@ -175,8 +185,7 @@ class Game():
         """
         Function to run game
         """
-    
-        
+
         if self._running is not True and self.framerate and self.name and self.dimensions:
 
             pg.init()
@@ -249,7 +258,6 @@ class Game():
         arcade_90 = self.getfont("../assets/resources/fonts/arcade.ttf", 90)
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
 
-
         mainmenu = self.renderfont(funkmaster, "Patrice Smash", True, (255, 255, 255))
         playText = self.renderfont(arcade_72, "Play", True, (255, 255, 255))
         optionsText = self.renderfont(arcade_72, "Options", True, (255, 255, 255))
@@ -265,6 +273,9 @@ class Game():
         centerOptionsText.inflate(30, 30)
         centerCreditsText.inflate(30, 30)
         selectionOutline.center = centerPlayText.center
+
+        if self.channel.get_busy() is False:
+            self.playIfActive(self.mainMenuSong, 999, self.channel)
 
         while self._running:
             
@@ -338,13 +349,117 @@ class Game():
             self.displaytext(creditsText, centerCreditsText)
 
             pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
-
             pg.display.update()
 
             self._clock.tick(self.framerate)
 
     def _mapSelectionLoop(self):
-        print("map select")
+
+        self._selected = "submit"
+
+        maps = self.getMapsFromCSV()
+        mapsLayoutMap = []
+
+        for map in maps:
+            dicte = {"name": map[0], "character": map[1], "imgpath": map[2], "songpath": map[3]}
+            mapsLayoutMap.append(dicte)
+
+        index = 0
+
+        pg.mouse.set_visible(False)
+        x, y = self.dimensions
+
+        funkmaster = self.getfont("../assets/resources/fonts/SFFunkMaster-Oblique.ttf", 90)
+        arcade_32 = self.getfont("../assets/resources/fonts/arcade.ttf", 32)
+
+        playPlaceholder = self.renderfont(funkmaster, "Select Map", True, (255, 255, 255))
+        centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/5)))
+
+        submitButton = self.renderfont(arcade_32, "Continue", True, (255,255,255))
+        centerSubmit = submitButton.get_rect(center=((x/2), (y/1.25)))
+
+        selectionOutline = centerSubmit.inflate(30, 30)
+        selectionOutline.center = centerSubmit.center
+
+        horizontalRect = centerPlaceholder.inflate(1000, 10)
+
+        centerPlaceholder.inflate(30,30)
+
+        photo = self.loadimage(mapsLayoutMap[index]["imgpath"])
+        photo = pg.transform.scale(photo, (350, 244)) 
+        photoCenter = photo.get_rect(center=((x /2), (y-600))) 
+
+        while self._mapselectlooprunning:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    self._running = False
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        if self._status == "select":
+                            self._status = "main"
+                            
+                            self._mapselectlooprunning = False
+                            self._mainloop()
+
+                    if event.key == pg.K_RETURN:
+                        if self._status == "select":
+                            if self._selected == "submit":
+
+                                self._selectedMap = mapsLayoutMap[index]
+
+                                self._status = "play"
+
+                                self._playrunning = True
+
+                                self._mapselectlooprunning = False
+                                self._selectloop()
+
+                                #self._status = "selectm"
+
+                                #self._mapselectlooprunning = True
+
+                                #self._characterselectlooprunning = False
+                                #self._characterAndMapSelectionLoop()
+
+                    if event.key == pg.K_s:
+                        if self._status == "select":
+                            if index < len(mapsLayoutMap) - 1:
+                                index += 1
+                            elif index == len(mapsLayoutMap) - 1:
+                                index = 0
+                            photo = self.loadimage(mapsLayoutMap[index]["imgpath"])
+                            photo = pg.transform.scale(photo, (350, 244)) 
+                            photoCenter = photo.get_rect(center=((x /2), (y-600))) 
+
+                    if event.key == pg.K_w:
+                        if self._status == "select":
+                            if index > 0:
+                                index -= 1
+                            elif index == 0:
+                                index = len(mapsLayoutMap) - 1 
+                            photo = self.loadimage(mapsLayoutMap[index]["imgpath"])
+                            photo = pg.transform.scale(photo, (350, 244)) 
+                            photoCenter = photo.get_rect(center=((x /2), (y-600))) 
+    
+                      
+            selectedMap = self.renderfont(arcade_32, mapsLayoutMap[index]["name"], True, (255,255,255))
+
+            centerSelection = selectedMap.get_rect(center=((x / 2), (y-400)))
+
+            self._window.blit(self.BACKGROUND, (0,0))
+            self._window.blit(photo, photoCenter)
+
+            self.displaytext(playPlaceholder, centerPlaceholder)
+            self.displaytext(selectedMap, centerSelection)
+            self.displaytext(submitButton, centerSubmit)
+
+
+            pg.draw.rect(self._window, (150, 150, 150), selectionOutline, 3, 10, 10, 10, 10)
+            self.draw_rect_alpha(self._window, (225, 225, 225, 50), horizontalRect)
+
+            pg.display.update()
+
+            self._clock.tick(self.framerate)
 
     def _characterAndMapSelectionLoop(self):
 
@@ -364,9 +479,7 @@ class Game():
         x, y = self.dimensions
 
         funkmaster = self.getfont("../assets/resources/fonts/SFFunkMaster-Oblique.ttf", 90)
-        arcade_90 = self.getfont("../assets/resources/fonts/arcade.ttf", 90)
         arcade_32 = self.getfont("../assets/resources/fonts/arcade.ttf", 32)
-        arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
 
         playPlaceholder = self.renderfont(funkmaster, "Select Character", True, (255, 255, 255))
         centerPlaceholder = playPlaceholder.get_rect(center=((x/2), (y/5)))
@@ -407,12 +520,10 @@ class Game():
                                 self._selectedChars["p1"] = characterLayoutMap[indexP1]
                                 self._selectedChars["p2"] = characterLayoutMap[indexP2]
 
-                                self._status = "play"
-
-                                self._playrunning = True
+                                self._mapselectlooprunning = True
 
                                 self._characterselectlooprunning = False
-                                self._selectloop()
+                                self._mapSelectionLoop()
 
                                 #self._status = "selectm"
 
@@ -420,9 +531,6 @@ class Game():
 
                                 #self._characterselectlooprunning = False
                                 #self._characterAndMapSelectionLoop()
-
-
-                            
 
                     if event.key == pg.K_DOWN:
                         if self._status == "select":
@@ -464,16 +572,20 @@ class Game():
             centerP2Selection = P2SelectedChar.get_rect(center=((x / 2 + 350), (y-400)))
 
             self._window.blit(self.BACKGROUND, (0,0))
-            if characterLayoutMap[indexP1]["filepathname"] != "patrice":
-                self._window.blit(photoP1, ((x / 2 - 425), (y-650)))
-            else:
+            if characterLayoutMap[indexP1]["filepathname"] == "patrice":
                 updatedsize = pg.transform.scale(photoP1, (165, 134))
                 self._window.blit(updatedsize, ((x / 2 - 425), (y-600)))
-            if characterLayoutMap[indexP2]["filepathname"] != "patrice":
-                self._window.blit(photoP2, ((x / 2 + 275), (y-650)))
+            elif characterLayoutMap[indexP1]["filepathname"] == "chemistry":
+                self._window.blit(photoP1, ((x / 2 - 425), (y-700)))
             else:
+                self._window.blit(photoP1, ((x / 2 - 425), (y-650)))
+            if characterLayoutMap[indexP2]["filepathname"] == "patrice":
                 updatedsize = pg.transform.scale(photoP2, (165, 134))
                 self._window.blit(updatedsize, ((x / 2 + 275), (y-600)))
+            elif characterLayoutMap[indexP2]["filepathname"] == "chemistry":
+                self._window.blit(photoP2, ((x / 2 + 275), (y-700)))
+            else:
+                self._window.blit(photoP2, ((x / 2 + 275), (y-650)))
             
             self.displaytext(playPlaceholder, centerPlaceholder)
             self.displaytext(P1SelectedChar, centerP1Selection)
@@ -489,6 +601,7 @@ class Game():
             self._clock.tick(self.framerate)
 
     def _selectloop(self):
+        self.channel.fadeout(1)
 
         overlay = cc.GameOverOverlay()
 
@@ -506,8 +619,7 @@ class Game():
         pg.mouse.set_visible(False)
         x, y = self.dimensions
 
-        maps = self.loadcsv('../assets/resources/csv/maps.csv')
-        compiliedMaps = self.compileCSVList(maps)
+        mapSong = pg.mixer.Sound(self._selectedMap["songpath"])
 
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
         arcade_32 = self.getfont("../assets/resources/fonts/arcade.ttf", 32)
@@ -524,7 +636,9 @@ class Game():
         centerBack.inflate(30, 30)
         selectionOutline.center = centerBack.center
 
-        self.playIfActive(self._outbackSong, 999)
+        image = self.loadimage(self._selectedMap["imgpath"])
+
+        self.playIfActive(mapSong, 999)
 
         startTicks = pg.time.get_ticks()
         timerEvent = pg.USEREVENT + 1 
@@ -542,7 +656,7 @@ class Game():
                             for char in self.all_sprites:
                                 char.kill()
 
-                            self._outbackSong.stop()
+                            mapSong.stop()
                             
                             self._playrunning = False
                             self._mainloop()
@@ -577,7 +691,7 @@ class Game():
                     
                     if counter == 0:
                         pg.time.set_timer(timerEvent, 0)
-                        self._atlantisSong.fadeout(1)
+                        mapSong.fadeout(1)
                         self._gameOverSoundEffect.play()    
 
                         gameover = True                    
@@ -597,7 +711,7 @@ class Game():
             playPlaceholder2 = self.renderfont(arcade_32, f"P1 ({P1_lives}): {round(P1_health)}%", True, (255, 255, 255))
             centerPlaceHolder2 = playPlaceholder2.get_rect(center=((1525), (y/6.5)))
 
-            self._window.blit(self.OUTBACKPLAYSCREEN, (190,0))
+            self._window.blit(image, (190,0))
 
             for entity in self._characterList["alive"]:
                 entity.move(gameover)
@@ -656,7 +770,6 @@ class Game():
         selectionOutline.center = centerAudioToggle.center
 
         while self._optionsrunning:
-            
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self._running = False
@@ -701,6 +814,7 @@ class Game():
                                     soundToggle = self.renderfont(arcade_60, f"Audio Enabled:{self._SOUNDENABLED}", True, (255, 255, 255))
                                     centerAudioToggle = soundToggle.get_rect(center=((x/2), (y/1.75)))
                                     selectionOutline = centerAudioToggle.inflate(30,30)
+                                    self.channel.fadeout(1)
 
                                 elif CURRENT_TOGGLE_STATUS == False:
                                     self.updateAudioListAndWriteToJSON(True)
@@ -809,21 +923,6 @@ game = Game()
 game.dimensions = (1920,1080)
 game.name = "PatriceSmash"
 game.framerate = 60
-
-class Character(pg.sprite.Sprite):
-    """
-    Represents a character builder
-    """
-    def __init__(self, name, health, lives):
-        self.idle: pg.Surface = None
-        self.running: pg.Surface = None
-        self.attack: pg.Surface = None 
-
-        self.game = game
-        self.health: float = None
-        self.name: str = None
-        self.alive: bool = True
-        self.lives: int = None
 
 def get_game():
     """

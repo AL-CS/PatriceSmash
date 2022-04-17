@@ -1,7 +1,5 @@
-Name,Character
-Atlantis,Sir. Lancelot
-123 Sesame Street,Grover
-Outback,Roger
-Bathtub,Patrice
-Classroom,Mr. Walker
-Prehistoric Land,Dennis the Dinosaur
+name,character,imgpath,songpath
+Outback,Roger,../assets/art/maps/outback.png,../assets/sounds/songs/outback.wav
+Classroom,Captain Chemistry,../assets/art/maps/classroom.png,../assets/sounds/songs/school.wav
+Bathroom,Patrice,../assets/art/maps/bathroom.png,../assets/sounds/songs/bathroom.wav
+Atlantis,Sir. Lancelot,../assets/art/maps/atlantis.png,../assets/sounds/songs/atlantis.wav

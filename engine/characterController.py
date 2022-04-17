@@ -198,7 +198,6 @@ class Character(pg.sprite.Sprite):
             self.jum -= 1
             if self.jum >= 0:
                 self.vel.y = -30
-    
     def damage(self, type, custom: float = None):
         if self.check():
             if self.alive is True:
@@ -243,17 +242,17 @@ class Platform(pg.sprite.Sprite):
     game = control.game
     x, y= game.dimensions
 
-    TESTMAPPLATY = 800
-    OUTBACKY = 690
-    ATLANTISY = 800
+    SAVEDDIMENSIONS = {"testmap": 800, "outback": 690, "atlantis": 770, "bathroom": 760, "classroom": 720}
 
-    def __init__(self):  
+    def __init__(self, selectedMap):  
         super().__init__()
         self.surf = pg.Surface((self.game.dimensions[0], 10))
         self.surf.fill((127, 33, 33))
         self.surf.set_colorkey((127, 33, 33))
         self.surf.set_alpha(100)
-        self.rect = self.surf.get_rect(center = (self.x/2, self.OUTBACKY))
+        selectedMapYValue = self.SAVEDDIMENSIONS[selectedMap["name"].lower()]
+
+        self.rect = self.surf.get_rect(center = (self.x/2, selectedMapYValue))
     
     def draw(self):
         self.surf.set_alpha(128)
@@ -271,8 +270,3 @@ class GameOverOverlay(pg.sprite.Sprite):
 
     def draw(self):
         self.game._window.blit(self.surf, self.rect)
-#patrice = Character("Andrew", "", "")
-#damageTypes = patrice.damagetypes()
-#for i in range(100):
-    #type = damageTypes.chooseRandomType()
-    #patrice.damage(type)
