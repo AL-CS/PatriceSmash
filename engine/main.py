@@ -1,8 +1,4 @@
-from concurrent.futures import thread
 import csv
-from re import I
-import threading
-from numpy import random
 import pygame as pg
 import json
 from pygame.rect import *  
@@ -20,27 +16,33 @@ class Game():
     _characterselectlooprunning = False
     _mapselectlooprunning = False
 
+    # constants 
     ACC = 4
     FRIC = -0.2
     vec = pg.math.Vector2
 
+    # char list
     _characterList = {
         "alive": pg.sprite.Group(),
         "dead": pg.sprite.Group()
     }
-
+    
+    # char binding
     _binding = {
         "wasd": None,
         "arrow": None
     }
 
+    # currently selected chars
     _selectedChars = {
         "p1": None,
         "p2": None
     }
 
+    # currently selected map
     _selectedMap = None
 
+    # init and load tons of values
     def __init__(self) -> None:
         self.dimensions: tuple = (1920,1080)
         self._window = pg.display.set_mode(self.dimensions, pg.RESIZABLE)
@@ -53,7 +55,7 @@ class Game():
         self.mainMenuSong = pg.mixer.Sound("../assets/sounds/songs/menu.wav")
         self.channel = pg.mixer.Channel(0)
 
-
+        # tons of sound imports
         self._clickSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/select.wav")
         self.swishSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/swish.wav")
         self._punchSoundEffect = pg.mixer.Sound("../assets/sounds/punch.wav")
@@ -65,25 +67,34 @@ class Game():
         self._SOUNDENABLED = self.dictData["audio"]
         self._VOLUME = self.dictData["volume"]
 
+        # place sounds in list for future volume control
         self.SOUNDS = [self._clickSoundEffect, self.swishSoundEffect, self._punchSoundEffect, self._gameOverSoundEffect]
 
+        # load background images
         self.BACKGROUND = self.loadimage("../assets/art/backgrounds/Background1.png")
         self.selectedmapimage = None
 
+        # vars to be loaded
         self.framerate: int = None
         self.name: str = None
         self.icon: pg.Surface = None
 
+        # define sprite groups
         self.collisionBoxes = pg.sprite.Group()
         self.all_sprites = pg.sprite.Group()
 
+        # define game clock
         self._clock = pg.time.Clock()
 
+        # define menu oriented var control
         self._status = "main"
         self._selected = "play"
         self._previously_selected = "play"
             
     class Colors():
+        """
+        Color values in a clean CONSTANT
+        """
         BLACK = (0, 0, 0)
         WHITE = (255, 255, 255)
         RED = (255, 0, 0)
@@ -91,11 +102,17 @@ class Game():
         BLUE = (0, 0, 225)
 
     def __initCollisionBoxes__(self) -> None:
+        """
+        Initialize collision boxes including platform and base code for future development on floating platforms
+        """
         plat = cc.Platform(self._selectedMap)
         self.collisionBoxes.add(plat)
         self.all_sprites.add(plat)
 
     def __initChars__(self, p1dict, p2dict) -> None:
+        """
+        Initialize charaters and pull file paths
+        """
         char = cc.Character(p1dict["name"], p1dict["desc"], p1dict["imgpath"] + "/" + p1dict["filepathname"] + "_", "wasd")
         self._characterList["alive"].add(char)
         self.all_sprites.add(char)
@@ -111,33 +128,51 @@ class Game():
         char2.initChar()
 
     def updateAudioListAndWriteToJSON(self, boolVal: bool) -> None:
+        """
+        Update audio selector and write to user settings file for future use
+        """
         self._SOUNDENABLED = boolVal
         with open('../assets/resources/json/userSettings.json', "w") as f:
             compiled = json.dumps(self.dictData)
             f.write(compiled)
     
     def getMapsFromCSV(self):
+        """
+        Load maps from CSV and compile them
+        """
         maps = self.loadcsv('../assets/resources/csv/maps.csv')
         compiliedMaps = self.compileCSVList(maps)
         return compiliedMaps
 
     def getCharactersFromCSV(self):
+        """
+        Load characters from CSV and compile them
+        """
         characters = self.loadcsv('../assets/resources/csv/characters.csv')
         compiliedCharacters = self.compileCSVList(characters)
         return compiliedCharacters
 
     def playIfActive(self, sound: pg.mixer.Sound, loops: int = 0, channel: pg.mixer.Channel = None) -> None:
+        """
+        Play sound if game value is active
+        """
         if channel is None:
             if self._SOUNDENABLED is True: sound.play(loops=loops)
         else:
             channel.play(sound, loops)
 
     def changeVolume(self, volume: float) -> None:
+        """
+        Currently unused function to iterate all sounds and music, and set volume to desired 0.1 -> 1 value
+        """
         pg.mixer.music.set_volume(volume)
         for sound in self.SOUNDS:
             sound.set_volume(volume)
         
     def draw_rect_alpha(self, surface, color, rect) -> None:
+        """
+        Draw a rectangle with alpha values
+        """
         shape_surf = pg.Surface(pg.Rect(rect).size, pg.SRCALPHA)
         pg.draw.rect(shape_surf, color, shape_surf.get_rect())
         surface.blit(shape_surf, rect)
@@ -180,6 +215,9 @@ class Game():
         return csvOut 
     
     def convertSeconds(self, seconds) -> str:
+        """
+        Converts seconds to a readable time string using divmod
+        """
         min, sec = divmod(seconds, 60)
         hour, min = divmod(min, 60)
         return "%02d:%02d" % (min, sec)
@@ -361,6 +399,9 @@ class Game():
             self._clock.tick(self.framerate)
 
     def _mapSelectionLoop(self):
+        """
+        Map selection loop
+        """
 
         self._selected = "submit"
 
@@ -472,6 +513,9 @@ class Game():
             self._clock.tick(self.framerate)
 
     def _characterAndMapSelectionLoop(self):
+        """
+        Character selection loop
+        """
 
         self._selected = "submit"
 
@@ -615,6 +659,10 @@ class Game():
             self._clock.tick(self.framerate)
 
     def _selectloop(self):
+        """
+        main game loop
+        """
+
         self.channel.fadeout(1)
 
         overlay = cc.GameOverOverlay()
@@ -796,6 +844,10 @@ class Game():
             self._clock.tick(self.framerate)
     
     def _optionsloop(self):
+        """
+        Options loop with base code for more options down the road
+        """
+
         self._selected = "toggleAudio"
         pg.mouse.set_visible(False)
         x, y = self.dimensions
@@ -899,16 +951,17 @@ class Game():
             self._clock.tick(self.framerate)
 
     def _creditsloop(self):
+        """
+        Loop with contributers including members outside of the group
+        """
         self._selected = "back"
         pg.mouse.set_visible(False)
         x, y = self.dimensions
 
         overlay = cc.GameOverOverlay()
 
-        arcade_90 = self.getfont("../assets/resources/fonts/arcade.ttf", 90)
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
         arcade_60 = self.getfont("../assets/resources/fonts/arcade.ttf", 45)
-        shocap = self.getfont("../assets/resources/fonts/Sho-CardCapsNF.ttf", 72)
         funkmaster = self.getfont("../assets/resources/fonts/SFFunkMaster-Oblique.ttf", 90)
 
         playPlaceholder = self.renderfont(funkmaster, "Game Credits", True, (255, 255, 255))
@@ -960,7 +1013,6 @@ class Game():
                                 self._creditsrunning = False
                                 self._mainloop()
 
-
             self._window.blit(self.BACKGROUND, (175,0))
             overlay.draw()
             self.displaytext(backText, centerBack)
@@ -979,22 +1031,27 @@ class Game():
 
             self._clock.tick(self.framerate)
 
+# create game class instance and define dimensions, name, and framerate
 game = Game()
 game.dimensions = (1920,1080)
 game.name = "PatriceSmash"
 game.framerate = 60
 
+# allow external files to access game loop
 def get_game():
     """
     Returns control loop game object
     """
     return game
 
+# load icon image
 img = game.loadimage("../assets/art/icon.png")
 game.icon = img
 
+# main func
 def main():
     game.run()
 
+# main check
 if __name__=="__main__":
     main()

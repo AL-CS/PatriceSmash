@@ -1,10 +1,7 @@
-import asyncio
-from concurrent.futures import thread
 import json
 import math
 import time
 import threading
-from turtle import left
 from numpy import random
 import pygame as pg
 import main as control
@@ -14,22 +11,27 @@ class Character(pg.sprite.Sprite):
     Represents a character builder
     """
 
+    # define game specific values
     game = control.game
     vec = game.vec
     x, y = (1920, 1080)
 
+    # init character builder
     def __init__(self, name, desc, imgpath, bind):
         super().__init__()
         self.imageattack = True
 
         self.imageRight = self.game.loadimage(f"{imgpath}right.png")
         self.imageLeft = self.game.loadimage(f"{imgpath}left.png")
+        
+        #check if character has attack poses
         try:
             self.imagePunchRight = self.game.loadimage(f"{imgpath}right_attack.png")
             self.imagePunchLeft = self.game.loadimage(f"{imgpath}left_attack.png")
         except:
             self.imageattack = False
 
+        #bind character and image
         if bind == "wasd":
             self.imagereg = self.imageRight
             self.currentOrientation = "right"
@@ -40,6 +42,7 @@ class Character(pg.sprite.Sprite):
         self.image = self.imagereg
         self.rect = self.image.get_rect(center=((self.x/2), (self.y/2)))
 
+        # more variables
         self.idle: pg.Surface = None
         self.running: pg.Surface = None
         self.attack: pg.Surface = None 
@@ -59,6 +62,7 @@ class Character(pg.sprite.Sprite):
         self.vel = self.vec(0,0)
         self.acc = self.vec(0,0)
         
+    # standardized damage types and probability function
     class damagetypes():
         HEAVY = "heavy"
         LIGHT = "light"
@@ -70,6 +74,7 @@ class Character(pg.sprite.Sprite):
             randomType = random.choice(types, p=probs)
             return randomType
 
+    # place character based on binding
     def initChar(self): 
         if self.bind is not None:
             if self.bind == "wasd":
@@ -77,16 +82,19 @@ class Character(pg.sprite.Sprite):
             elif self.bind == "arrow":
                 self.pos.x = 1693
 
+    # check function
     def check(self,status=False):
         if self.alive and self.canattack is True and status is False:
             return True
 
+    # threaded timer cooldown function to prevent spam attacks
     def timercooldown(self):
         self.cooldown = 1
         for i in range(1):
             time.sleep(1)
             self.cooldown -= 1
 
+    # switches character orientation image to attack within a thread to not yield game loop
     def switchtoattackimg(self):
         if self.currentOrientation == "right":
             self.image = self.imagePunchRight
@@ -101,9 +109,11 @@ class Character(pg.sprite.Sprite):
             self.image = self.imageLeft
             self.yieldingForThread = False
 
+    # draw character function
     def draw(self):
         self.game._window.blit(self.image, self.rect)
 
+    # determine if character is colliding with any collision boxes
     def update(self, collisionBoxes, playerlist):
         hits = pg.sprite.spritecollide(self, collisionBoxes, False)
 
@@ -112,6 +122,7 @@ class Character(pg.sprite.Sprite):
             self.pos.y = hits[0].rect.top + 1
             self.vel.y = 0
 
+    # move character and change image based on key
     def move(self, status):
         if self.check(status):
             self.acc = self.vec(0,1.5)
@@ -139,18 +150,20 @@ class Character(pg.sprite.Sprite):
                     if self.yieldingForThread is False:
                         self.image = self.imageRight
 
+            # core physics engine functions
             self.acc.x += self.vel.x * self.game.FRIC
             self.vel += self.acc
             self.pos += self.vel + 0.5 * self.acc
 
+            # map bordering
             if self.pos.x > 1703:
                 self.pos.x = 1703
             if self.pos.x < 215:
                 self.pos.x = 215
             self.rect.midbottom = self.pos
 
+    # attack function
     def attk(self, binding) -> bool:
-        final = {"landed": bool, "died": bool}
         if self.cooldown == 0:
             if self.check():
                 health_remaining = None
@@ -160,6 +173,7 @@ class Character(pg.sprite.Sprite):
                 elif self.bind == "arrow":
                     enemy = binding["wasd"]
                 
+                # thread image attack so game is not yielded
                 if self.imageattack is True:
                     t1 = threading.Thread(target=self.switchtoattackimg)
                     t1.setDaemon(True)
@@ -170,10 +184,12 @@ class Character(pg.sprite.Sprite):
                 landed = False
                 died = False
 
+                # determine distance between cords
                 distance = math.sqrt((enpos.x - pos.x) ** 2 + (enpos.y - pos.y) ** 2)
 
                 damageTypes = self.damagetypes()
 
+                # run if character is within attacking distance
                 if distance <= 250:
                     t1 = threading.Thread(target=self.timercooldown)
                     t1.setDaemon(True)
@@ -187,6 +203,7 @@ class Character(pg.sprite.Sprite):
                             
                         lives = todamage.lives
 
+                        # read health values
                         with open("../assets/resources/json/gameValues.json", "r") as f:
                             dataIn = json.loads(f.read())
                             f.close()
@@ -204,6 +221,7 @@ class Character(pg.sprite.Sprite):
                         elif health_remaining is None:
                             health_remaining = 0
 
+                        # write health values
                         with open("../assets/resources/json/gameValues.json", "w") as f:
                             f.write(json.dumps(dataIn))
                             f.close()
@@ -236,14 +254,17 @@ class Character(pg.sprite.Sprite):
                         landed = True
                     else:
                         landed = False
+                # return values to main game file
                 return (landed, died)
 
+    # jump function
     def jump(self):
         if self.check():
             self.jum -= 1
             if self.jum >= 0:
                 self.vel.y = -29
 
+    # client side damage function which determines random probablity and checks lives to determine death
     def damage(self, type, custom: float = None):
         died = False
         if self.check():
@@ -257,12 +278,12 @@ class Character(pg.sprite.Sprite):
                     randomDamage = custom
                 self.health -= randomDamage
 
+                # reduce lives if health is below 1
                 if self.health < 1:
                     if self.lives > 1:
                         self.lives -= 1
                         self.health = 250
 
-                        
                         if self.bind == "wasd":
                             self.canattack = False
                             self.pos = self.vec((225, 385))
@@ -273,6 +294,7 @@ class Character(pg.sprite.Sprite):
                             self.pos = self.vec((1693, 385))    
                             self.canattack = True
 
+                        # play death effect and print console debugging
                         self.game.playIfActive(self.game._deathSoundEffect)
                         print(f"{self.name} has {self.lives} lives left!")
 
@@ -282,17 +304,21 @@ class Character(pg.sprite.Sprite):
                         self.lives = 0
 
                         self.alive = False
+                        # kill sprite and end game
                         self.kill()
                         print(f"{self.name} died!")
                         died = True
                 return self.health, died
 
+# define platform to stand on
 class Platform(pg.sprite.Sprite):
     game = control.game
     x, y= game.dimensions
 
+    # saved dimensions for Y value on individual maps
     SAVEDDIMENSIONS = {"testmap": 800, "outback": 690, "atlantis": 770, "bathroom": 760, "classroom": 720}
 
+    # init platform data
     def __init__(self, selectedMap):  
         super().__init__()
         self.surf = pg.Surface((self.game.dimensions[0], 10))
@@ -307,6 +333,7 @@ class Platform(pg.sprite.Sprite):
         self.surf.set_alpha(128)
         self.game._window.blit(self.surf, self.rect)
 
+# game overlay used for menu and gameover functions
 class GameOverOverlay(pg.sprite.Sprite):
     game = control.game
     x, y = game.dimensions
