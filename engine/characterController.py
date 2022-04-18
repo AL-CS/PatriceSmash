@@ -1,8 +1,10 @@
 import asyncio
+from concurrent.futures import thread
 import json
 import math
 import time
 import threading
+from turtle import left
 from numpy import random
 import pygame as pg
 import main as control
@@ -18,16 +20,22 @@ class Character(pg.sprite.Sprite):
 
     def __init__(self, name, desc, imgpath, bind):
         super().__init__()
-        self.imageattack = None
+        self.imageattack = True
 
         self.imageRight = self.game.loadimage(f"{imgpath}right.png")
         self.imageLeft = self.game.loadimage(f"{imgpath}left.png")
+        try:
+            self.imagePunchRight = self.game.loadimage(f"{imgpath}right_attack.png")
+            self.imagePunchLeft = self.game.loadimage(f"{imgpath}left_attack.png")
+        except:
+            self.imageattack = False
 
         if bind == "wasd":
             self.imagereg = self.imageRight
+            self.currentOrientation = "right"
         elif bind == "arrow":
             self.imagereg = self.imageLeft
-        self.imageattacked = None
+            self.currentOrientation = "left"
         
         self.image = self.imagereg
         self.rect = self.image.get_rect(center=((self.x/2), (self.y/2)))
@@ -45,6 +53,7 @@ class Character(pg.sprite.Sprite):
         self.cooldown: int = 0
 
         # movement vars
+        self.yieldingForThread = False
         self.jum = 2
         self.pos = self.vec((self.x/2, 385))
         self.vel = self.vec(0,0)
@@ -78,6 +87,20 @@ class Character(pg.sprite.Sprite):
             time.sleep(1)
             self.cooldown -= 1
 
+    def switchtoattackimg(self):
+        if self.currentOrientation == "right":
+            self.image = self.imagePunchRight
+            self.yieldingForThread = True
+            time.sleep(.75)
+            self.image = self.imageRight
+            self.yieldingForThread = False
+        elif self.currentOrientation == "left":
+            self.image = self.imagePunchLeft
+            self.yieldingForThread = True
+            time.sleep(.75)
+            self.image = self.imageLeft
+            self.yieldingForThread = False
+
     def draw(self):
         self.game._window.blit(self.image, self.rect)
 
@@ -95,18 +118,26 @@ class Character(pg.sprite.Sprite):
             pressedKeys = pg.key.get_pressed()
             if self.bind == "arrow":
                 if pressedKeys[pg.K_LEFT]:
+                    self.currentOrientation = "left"
                     self.acc.x = -self.game.ACC
-                    self.image = self.imageLeft
+                    if self.yieldingForThread is False:
+                        self.image = self.imageLeft
                 if pressedKeys[pg.K_RIGHT]:
+                    self.currentOrientation = "right"
                     self.acc.x = self.game.ACC
-                    self.image = self.imageRight
+                    if self.yieldingForThread is False:
+                        self.image = self.imageRight
             elif self.bind == "wasd":
                 if pressedKeys[pg.K_a]:
+                    self.currentOrientation = "left"
                     self.acc.x = -self.game.ACC
-                    self.image = self.imageLeft
+                    if self.yieldingForThread is False:
+                        self.image = self.imageLeft
                 if pressedKeys[pg.K_d]:
+                    self.currentOrientation = "right"
                     self.acc.x = self.game.ACC
-                    self.image = self.imageRight
+                    if self.yieldingForThread is False:
+                        self.image = self.imageRight
 
             self.acc.x += self.vel.x * self.game.FRIC
             self.vel += self.acc
@@ -128,6 +159,11 @@ class Character(pg.sprite.Sprite):
                     enemy = binding["arrow"]
                 elif self.bind == "arrow":
                     enemy = binding["wasd"]
+                
+                if self.imageattack is True:
+                    t1 = threading.Thread(target=self.switchtoattackimg)
+                    t1.setDaemon(True)
+                    t1.start()
 
                 enpos = enemy.pos
                 pos = self.pos

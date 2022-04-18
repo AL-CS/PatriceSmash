@@ -197,6 +197,7 @@ class Game():
             self._running = True
             self._mainloop()
             print("Game loop started.")
+
         else:
             print("You have not initialized the game correctly, or the game is already running!")
 
@@ -481,6 +482,7 @@ class Game():
 
         for char in chars:
             dicte = {"name": char[0], "desc": char[3], "imgpath": char[1], "filepathname": char[2]}
+
             characterLayoutMap.append(dicte)
 
         indexP1 = 0
@@ -656,7 +658,9 @@ class Game():
         self.playIfActive(mapSong, 999)
 
         startTicks = pg.time.get_ticks()
+
         timerEvent = pg.USEREVENT + 1 
+
         pg.time.set_timer(timerEvent, 1000)
 
         while self._playrunning:
@@ -679,11 +683,13 @@ class Game():
                     if event.key == pg.K_w:
                         if self._status == "play" and gameover is False:
                             char = self._binding["wasd"]
+                            
                             char.jump()
 
                     if event.key == pg.K_UP:
                         if self._status == "play" and gameover is False:
                             char = self._binding["arrow"]
+
                             char.jump()
 
                     if event.key == pg.K_x:
