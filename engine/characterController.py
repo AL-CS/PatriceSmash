@@ -119,6 +119,7 @@ class Character(pg.sprite.Sprite):
             self.rect.midbottom = self.pos
 
     def attk(self, binding) -> bool:
+        final = {"landed": bool, "died": bool}
         if self.cooldown == 0:
             if self.check():
                 health_remaining = None
@@ -130,6 +131,8 @@ class Character(pg.sprite.Sprite):
 
                 enpos = enemy.pos
                 pos = self.pos
+                landed = False
+                died = False
 
                 distance = math.sqrt((enpos.x - pos.x) ** 2 + (enpos.y - pos.y) ** 2)
 
@@ -142,7 +145,10 @@ class Character(pg.sprite.Sprite):
                     if self.bind == "wasd":
                         todamage = binding["arrow"]
                         damage = damageTypes.chooseRandomType()
-                        health_remaining = todamage.damage(damage) 
+                        data = todamage.damage(damage) 
+                        health_remaining = data[0]
+                        died = data[1]
+                            
                         lives = todamage.lives
 
                         with open("../assets/resources/json/gameValues.json", "r") as f:
@@ -150,6 +156,7 @@ class Character(pg.sprite.Sprite):
                             f.close()
 
                         if health_remaining is not None:
+                            print(health_remaining)
                             if health_remaining > 0:
                                 dataIn["healthValues"]["P2"] = health_remaining
                                 dataIn["lives"]["P2"] = lives   
@@ -168,7 +175,9 @@ class Character(pg.sprite.Sprite):
                     if self.bind == "arrow":
                         todamage = binding["wasd"]
                         damage = damageTypes.chooseRandomType()
-                        health_remaining = todamage.damage(damage)
+                        data = todamage.damage(damage)
+                        health_remaining = data[0]
+                        died = data[1]
                         lives = todamage.lives
 
                         with open("../assets/resources/json/gameValues.json", "r") as f:
@@ -187,18 +196,20 @@ class Character(pg.sprite.Sprite):
                             f.write(json.dumps(dataIn))
                             f.close()
 
-                    if distance <= 175:
+                    if distance <= 250:
                         landed = True
                     else:
                         landed = False
-                    return landed
+                return (landed, died)
 
     def jump(self):
         if self.check():
             self.jum -= 1
             if self.jum >= 0:
-                self.vel.y = -30
+                self.vel.y = -29
+
     def damage(self, type, custom: float = None):
+        died = False
         if self.check():
             if self.alive is True:
                 if custom is None:
@@ -215,7 +226,7 @@ class Character(pg.sprite.Sprite):
                         self.lives -= 1
                         self.health = 250
 
-
+                        
                         if self.bind == "wasd":
                             self.canattack = False
                             self.pos = self.vec((225, 385))
@@ -226,6 +237,7 @@ class Character(pg.sprite.Sprite):
                             self.pos = self.vec((1693, 385))    
                             self.canattack = True
 
+                        self.game.playIfActive(self.game._deathSoundEffect)
                         print(f"{self.name} has {self.lives} lives left!")
 
                     elif self.lives <= 1:
@@ -236,7 +248,8 @@ class Character(pg.sprite.Sprite):
                         self.alive = False
                         self.kill()
                         print(f"{self.name} died!")
-                return self.health
+                        died = True
+                return self.health, died
 
 class Platform(pg.sprite.Sprite):
     game = control.game
@@ -265,7 +278,7 @@ class GameOverOverlay(pg.sprite.Sprite):
     def __init__(self):
         self.surf = pg.Surface(self.game.dimensions)
         self.surf.fill((0, 0, 0, 255))
-        self.surf.set_alpha(127)
+        self.surf.set_alpha(150)
         self.rect = self.surf.get_rect(center = (self.x/2, self.y/2))
 
     def draw(self):

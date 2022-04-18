@@ -58,13 +58,16 @@ class Game():
         self.swishSoundEffect = pg.mixer.Sound("../assets/sounds/mainmenu/swish.wav")
         self._punchSoundEffect = pg.mixer.Sound("../assets/sounds/punch.wav")
         self._gameOverSoundEffect = pg.mixer.Sound("../assets/sounds/gameover.wav")
+        self._deathSoundEffect = pg.mixer.Sound("../assets/sounds/death.wav")
+        self._quackSoundEffect = pg.mixer.Sound("../assets/sounds/quack.wav")
+        self._squeakSoundEfect = pg.mixer.Sound("../assets/sounds/squeak.wav")
+        self._kickSoundEffect = pg.mixer.Sound("../assets/sounds/kick.wav")
         self._SOUNDENABLED = self.dictData["audio"]
         self._VOLUME = self.dictData["volume"]
 
         self.SOUNDS = [self._clickSoundEffect, self.swishSoundEffect, self._punchSoundEffect, self._gameOverSoundEffect]
 
-
-        self.BACKGROUND = self.loadimage("../assets/art/backgrounds/mainmenu.png")
+        self.BACKGROUND = self.loadimage("../assets/art/backgrounds/Background1.png")
         self.selectedmapimage = None
 
         self.framerate: int = None
@@ -98,7 +101,7 @@ class Game():
         self.all_sprites.add(char)
         self._binding["wasd"] = char
         char.bind = "wasd"
-        char.initChar()
+        char.initChar() 
 
         char2 = cc.Character(p2dict["name"], p2dict["desc"], p2dict["imgpath"] + "/" + p2dict["filepathname"] + "_", "arrow")
         self._characterList["alive"].add(char2)
@@ -198,7 +201,7 @@ class Game():
             print("You have not initialized the game correctly, or the game is already running!")
 
     def get(self, var: str):
-        """                                                                                                                m            
+        """         
         Gets and returns private vars
         """
         if var.lower() == "framerate":
@@ -251,6 +254,8 @@ class Game():
 
         self._selected = "play"
 
+        overlay = cc.GameOverOverlay()
+
         pg.mouse.set_visible(False)
         x, y = self.dimensions
 
@@ -278,7 +283,6 @@ class Game():
             self.playIfActive(self.mainMenuSong, 999, self.channel)
 
         while self._running:
-            
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self._running = False
@@ -343,6 +347,8 @@ class Game():
 
             self._window.blit(self.BACKGROUND, (175,0))
 
+            overlay.draw()
+
             self.displaytext(mainmenu, centerMainText)
             self.displaytext(playText, centerPlayText)
             self.displaytext(optionsText, centerOptionsText)
@@ -356,6 +362,8 @@ class Game():
     def _mapSelectionLoop(self):
 
         self._selected = "submit"
+
+        overlay = cc.GameOverOverlay()
 
         maps = self.getMapsFromCSV()
         mapsLayoutMap = []
@@ -446,7 +454,8 @@ class Game():
 
             centerSelection = selectedMap.get_rect(center=((x / 2), (y-400)))
 
-            self._window.blit(self.BACKGROUND, (0,0))
+            self._window.blit(self.BACKGROUND, (175,0))
+            overlay.draw()
             self._window.blit(photo, photoCenter)
 
             self.displaytext(playPlaceholder, centerPlaceholder)
@@ -464,6 +473,8 @@ class Game():
     def _characterAndMapSelectionLoop(self):
 
         self._selected = "submit"
+
+        overlay = cc.GameOverOverlay()
 
         chars = self.getCharactersFromCSV()
         characterLayoutMap = []
@@ -571,7 +582,8 @@ class Game():
             centerP1Selection = P1SelectedChar.get_rect(center=((x / 2 - 350), (y-400)))
             centerP2Selection = P2SelectedChar.get_rect(center=((x / 2 + 350), (y-400)))
 
-            self._window.blit(self.BACKGROUND, (0,0))
+            self._window.blit(self.BACKGROUND, (175,0))
+            overlay.draw()
             if characterLayoutMap[indexP1]["filepathname"] == "patrice":
                 updatedsize = pg.transform.scale(photoP1, (165, 134))
                 self._window.blit(updatedsize, ((x / 2 - 425), (y-600)))
@@ -606,6 +618,7 @@ class Game():
         overlay = cc.GameOverOverlay()
 
         gameover = False
+        playerWon = "NO ONE"
         counter = 300
         self.__initChars__(self._selectedChars["p1"], self._selectedChars["p2"])
         self.__initCollisionBoxes__()
@@ -623,13 +636,15 @@ class Game():
 
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
         arcade_32 = self.getfont("../assets/resources/fonts/arcade.ttf", 32)
-
-        gameOverText = self.renderfont(arcade_72, "GAME OVER", True, (255, 255, 255))
+        
+        #if self._selectedMap["name"].lower() != "classroom":
+            #color = (255, 255, 255)
+        #else:
+            #color = (0, 0, 0)
         timerText = self.renderfont(arcade_32, f"Time Left: {self.convertSeconds(counter)}", True, (255, 255, 255))
         backText = self.renderfont(arcade_72, "Back", True, (255, 255, 255))
 
         centerBack = backText.get_rect(center=((x/2), (y/2.5)))
-        centerGameOver = gameOverText.get_rect(center=((x/2), (y/2)))
 
         selectionOutline = centerBack.inflate(30,30)
 
@@ -674,16 +689,40 @@ class Game():
                     if event.key == pg.K_x:
                         if self._status == "play" and gameover is False:
                             char = self._binding["wasd"]
-                            val = char.attk(self._binding)
-                            if val is True:
-                                self.playIfActive(self._punchSoundEffect)
+                            data = char.attk(self._binding)
+                            if data is not None:
+                                if data[0] is True:
+                                    if char.name.lower() == "patrice":
+                                        self.playIfActive(self._quackSoundEffect)
+                                    elif char.name.lower() == "captain chemistry":
+                                        self.playIfActive(self._punchSoundEffect)
+                                    elif char.name.lower() == "roger the kangaroo":
+                                        self.playIfActive(self._kickSoundEffect)
+                                    elif char.name.lower() == "sir. lancelot":
+                                        self.playIfActive(self._squeakSoundEfect)
+
+                                if data[1] is True:
+                                    gameover = True
+                                    playerWon = "Player 1"
 
                     if event.key == pg.K_KP_PERIOD:
                         if self._status == "play" and gameover is False:
                             char = self._binding["arrow"]
-                            val = char.attk(self._binding)
-                            if val is True:
-                                self.playIfActive(self._punchSoundEffect)
+                            data = char.attk(self._binding)
+                            if data is not None:
+                                if data[0] is True:
+                                    if char.name.lower() == "patrice":
+                                        self.playIfActive(self._quackSoundEffect)
+                                    elif char.name.lower() == "captain chemistry":
+                                        self.playIfActive(self._punchSoundEffect)
+                                    elif char.name.lower() == "roger the kangaroo":
+                                        self.playIfActive(self._kickSoundEffect)
+                                    elif char.name.lower() == "sir. lancelot":
+                                        self.playIfActive(self._squeakSoundEfect)
+
+                                if data[1] is True:
+                                    gameover = True
+                                    playerWon = "Player 2"
 
                 elif event.type == timerEvent:
                     counter -=1
@@ -694,7 +733,8 @@ class Game():
                         mapSong.fadeout(1)
                         self._gameOverSoundEffect.play()    
 
-                        gameover = True                    
+                        gameover = True
+                        playerWon = "NO ONE"
 
             with open("../assets/resources/json/gameValues.json", "r") as f:
                 jsonValues = json.loads(f.read())
@@ -732,8 +772,16 @@ class Game():
             self.displaytext(playPlaceholder, centerPlaceholder)
             self.displaytext(playPlaceholder2, centerPlaceHolder2)
             self.displaytext(timerText, centerTimer)
+
+            
             
             if gameover is True:
+                mapSong.fadeout(1)
+                pg.time.set_timer(timerEvent, 0)
+                self._gameOverSoundEffect.play()
+
+                gameOverText = self.renderfont(arcade_72, f"{playerWon} WINS", True, (255, 255, 255))
+                centerGameOver = gameOverText.get_rect(center=((x/2), (y/2)))
                 overlay.draw()
                 self.displaytext(gameOverText, centerGameOver)
 
@@ -745,6 +793,8 @@ class Game():
         self._selected = "toggleAudio"
         pg.mouse.set_visible(False)
         x, y = self.dimensions
+
+        overlay = cc.GameOverOverlay()
 
         arcade_60 = self.getfont("../assets/resources/fonts/arcade.ttf", 60)
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
@@ -829,7 +879,8 @@ class Game():
                                 self._mainloop()
 
 
-            self._window.blit(self.BACKGROUND, (0,0))
+            self._window.blit(self.BACKGROUND, (175,0))
+            overlay.draw()
             self.displaytext(playPlaceholder, centerPlaceholder)
             self.displaytext(soundToggle, centerAudioToggle)
             self.displaytext(backText, centerBack)
@@ -845,6 +896,8 @@ class Game():
         self._selected = "back"
         pg.mouse.set_visible(False)
         x, y = self.dimensions
+
+        overlay = cc.GameOverOverlay()
 
         arcade_90 = self.getfont("../assets/resources/fonts/arcade.ttf", 90)
         arcade_72 = self.getfont("../assets/resources/fonts/arcade.ttf", 72)
@@ -902,7 +955,8 @@ class Game():
                                 self._mainloop()
 
 
-            self._window.blit(self.BACKGROUND, (0,0))
+            self._window.blit(self.BACKGROUND, (175,0))
+            overlay.draw()
             self.displaytext(backText, centerBack)
             self.displaytext(projectManager, centerProjectManager)
             self.displaytext(businessAnalyst, centerBusinessAnalyst)
